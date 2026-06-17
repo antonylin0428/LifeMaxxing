@@ -1,0 +1,510 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: LifeMaxxing backend - Cognito + HTTP API + Lambda + DynamoDB (on-demand)
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 10
+    MemorySize: 256
+    Layers:
+      - !Ref SharedLayer
+    Environment:
+      Variables:
+        USERS_TABLE: !Ref UsersTable
+        CATEGORY_STATS_TABLE: !Ref CategoryStatsTable
+        DAILY_LOGS_TABLE: !Ref DailyLogsTable
+        XP_EVENTS_TABLE: !Ref XPEventsTable
+        FRIEND_REQUESTS_TABLE: !Ref FriendRequestsTable
+        FRIENDSHIPS_TABLE: !Ref FriendshipsTable
+
+Resources:
+
+  # ---------------------------------------------------------------------
+  # Shared Lambda layer: xpRules, rankLadder, identity, serverClock, http,
+  # dynamoClient. Plain JS, no build step - sam build copies it as-is.
+  # ---------------------------------------------------------------------
+  SharedLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: lifemaxxing-shared
+      ContentUri: layers/shared/
+      CompatibleRuntimes:
+        - nodejs20.x
+      RetentionPolicy: Delete
+
+  # ---------------------------------------------------------------------
+  # Cognito - the ONLY source of identity for the app. No Identity Pool is
+  # provisioned anywhere in this stack: the iOS app never receives AWS
+  # credentials, only JWTs, so it has no path to talk to DynamoDB directly.
+  # ---------------------------------------------------------------------
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: lifemaxxing-users
+      AutoVerifiedAttributes:
+        - email
+      UsernameAttributes:
+        - email
+      Schema:
+        - Name: email
+          Required: true
+          Mutable: true
+        - Name: preferred_username
+          Required: false
+          Mutable: true
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: false
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+      LambdaConfig:
+        PostConfirmation: !GetAtt PostConfirmationFunction.Arn
+
+  CognitoPostConfirmationInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref PostConfirmationFunction
+      Action: lambda:InvokeFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt CognitoUserPool.Arn
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref CognitoUserPool
+      ClientName: lifemaxxing-ios
+      GenerateSecret: false # public mobile client, no client secret
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+
+  # ---------------------------------------------------------------------
+  # API Gateway HTTP API with a native Cognito JWT authorizer. Every route
+  # below is protected by default - there is no public route in this app.
+  # ---------------------------------------------------------------------
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      Auth:
+        Authorizers:
+          CognitoAuthorizer:
+            JwtConfiguration:
+              issuer: !Sub https://cognito-idp.${AWS::Region}.amazonaws.com/${CognitoUserPool}
+              audience:
+                - !Ref CognitoUserPoolClient
+            IdentitySource: "$request.header.Authorization"
+        DefaultAuthorizer: CognitoAuthorizer
+
+  # ---------------------------------------------------------------------
+  # DynamoDB tables - all on-demand (PAY_PER_REQUEST). See plan section 4
+  # for the full access-pattern rationale.
+  # ---------------------------------------------------------------------
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+        - AttributeName: GSI1PK
+          AttributeType: S
+        - AttributeName: GSI1SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1
+          KeySchema:
+            - AttributeName: GSI1PK
+              KeyType: HASH
+            - AttributeName: GSI1SK
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      # Season-readiness: GSI2 (GSI2PK=SEASON#<id>, GSI2SK=SEASONXP#<padded>)
+      # gets added here later, once seasons launch - pure additive change,
+      # seasonXP/currentSeasonId attributes already exist on every item.
+
+  CategoryStatsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+
+  DailyLogsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+
+  XPEventsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+
+  FriendRequestsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+        - AttributeName: GSI1PK
+          AttributeType: S
+        - AttributeName: GSI1SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1
+          KeySchema:
+            - AttributeName: GSI1PK
+              KeyType: HASH
+            - AttributeName: GSI1SK
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  FriendshipsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+
+  # ---------------------------------------------------------------------
+  # Lambda functions - one per route, least-privilege IAM per function.
+  # ---------------------------------------------------------------------
+
+  PostConfirmationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/postConfirmation/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:PutItem
+              Resource: !GetAtt UsersTable.Arn
+
+  CompleteTaskFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/completeTask/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+              Resource:
+                - !GetAtt CategoryStatsTable.Arn
+                - !GetAtt UsersTable.Arn
+            - Effect: Allow
+              Action: dynamodb:TransactWriteItems
+              Resource:
+                - !GetAtt DailyLogsTable.Arn
+                - !GetAtt XPEventsTable.Arn
+                - !GetAtt CategoryStatsTable.Arn
+                - !GetAtt UsersTable.Arn
+      Events:
+        CompleteTask:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /tasks/complete
+            Method: POST
+
+  UseStreakFreezeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/useStreakFreeze/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:UpdateItem
+              Resource: !GetAtt CategoryStatsTable.Arn
+      Events:
+        UseStreakFreeze:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /tasks/freeze
+            Method: POST
+
+  GetMeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/getMe/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:GetItem
+              Resource: !GetAtt UsersTable.Arn
+      Events:
+        GetMe:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /me
+            Method: GET
+
+  GetCategoriesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/getCategories/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:Query
+              Resource: !GetAtt CategoryStatsTable.Arn
+      Events:
+        GetCategories:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /me/categories
+            Method: GET
+
+  UpdateCategoryConfigFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/updateCategoryConfig/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:UpdateItem
+              Resource: !GetAtt CategoryStatsTable.Arn
+      Events:
+        UpdateCategoryConfig:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /me/categories/{categoryId}
+            Method: PUT
+
+  SearchFriendsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/searchFriends/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:Query
+              Resource:
+                - !GetAtt UsersTable.Arn
+                - !Sub "${UsersTable.Arn}/index/GSI1"
+      Events:
+        SearchFriends:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /friends/search
+            Method: GET
+
+  FriendRequestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/friendRequest/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:Query
+              Resource:
+                - !GetAtt FriendRequestsTable.Arn
+                - !Sub "${FriendRequestsTable.Arn}/index/GSI1"
+            - Effect: Allow
+              Action: dynamodb:GetItem
+              Resource: !GetAtt UsersTable.Arn
+            - Effect: Allow
+              Action: dynamodb:PutItem
+              Resource: !GetAtt FriendRequestsTable.Arn
+      Events:
+        FriendRequest:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /friends/request
+            Method: POST
+
+  FriendAcceptFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/friendAccept/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:GetItem
+              Resource:
+                - !GetAtt FriendRequestsTable.Arn
+                - !GetAtt UsersTable.Arn
+            - Effect: Allow
+              Action: dynamodb:TransactWriteItems
+              Resource:
+                - !GetAtt FriendRequestsTable.Arn
+                - !GetAtt FriendshipsTable.Arn
+      Events:
+        FriendAccept:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /friends/accept
+            Method: POST
+
+  FriendDeclineFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/friendDecline/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:DeleteItem
+              Resource: !GetAtt FriendRequestsTable.Arn
+      Events:
+        FriendDecline:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /friends/decline
+            Method: POST
+
+  ListFriendsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/listFriends/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:Query
+              Resource: !GetAtt FriendshipsTable.Arn
+      Events:
+        ListFriends:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /friends
+            Method: GET
+
+  ListPendingRequestsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/listPendingRequests/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:Query
+              Resource:
+                - !GetAtt FriendRequestsTable.Arn
+                - !Sub "${FriendRequestsTable.Arn}/index/GSI1"
+      Events:
+        ListPendingRequests:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /friends/requests
+            Method: GET
+
+  LeaderboardFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/leaderboard/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:Query
+              Resource: !GetAtt FriendshipsTable.Arn
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:BatchGetItem
+              Resource: !GetAtt UsersTable.Arn
+      Events:
+        Leaderboard:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /leaderboard/friends
+            Method: GET
+
+Outputs:
+  HttpApiUrl:
+    Description: Base URL for the HTTP API
+    Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  CognitoUserPoolId:
+    Value: !Ref CognitoUserPool
+  CognitoUserPoolClientId:
+    Value: !Ref CognitoUserPoolClient
+  UsersTableName:
+    Value: !Ref UsersTable
+  CategoryStatsTableName:
+    Value: !Ref CategoryStatsTable
+  DailyLogsTableName:
+    Value: !Ref DailyLogsTable
+  XPEventsTableName:
+    Value: !Ref XPEventsTable
+  FriendRequestsTableName:
+    Value: !Ref FriendRequestsTable
+  FriendshipsTableName:
+    Value: !Ref FriendshipsTable

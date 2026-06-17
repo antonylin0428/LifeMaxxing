@@ -1,0 +1,5 @@
+.aws-sam/
+node_modules/
+!layers/shared/nodejs/node_modules/
+!layers/shared/nodejs/node_modules/**
+.env

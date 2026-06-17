@@ -1,0 +1,12 @@
+{
+  "requestContext": {
+    "authorizer": {
+      "jwt": {
+        "claims": {
+          "sub": "test-user-sub-1234"
+        }
+      }
+    }
+  },
+  "body": "{\"categoryId\":\"FITNESS\",\"idempotencyKey\":\"11111111-1111-1111-1111-111111111111\"}"
+}
