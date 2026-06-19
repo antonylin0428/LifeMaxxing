@@ -31,4 +31,32 @@ enum Rank: String, Codable, CaseIterable {
         case .chad: return "Chad"
         }
     }
+
+    /// XP needed to reach this rank. Mirrors RANKS[*].xpRequired in
+    /// rankLadder.js - display-only, used to draw progress bars on the
+    /// client. The server alone decides which rank a user actually holds.
+    var xpRequired: Int {
+        switch self {
+        case .lowTierNormie1: return 0
+        case .lowTierNormie2: return 100
+        case .lowTierNormie3: return 250
+        case .midTierNormie1: return 500
+        case .midTierNormie2: return 900
+        case .midTierNormie3: return 1400
+        case .highTierNormie1: return 2100
+        case .highTierNormie2: return 3000
+        case .highTierNormie3: return 4200
+        case .chadLight: return 8000
+        case .chad: return 18000
+        }
+    }
+
+    /// The next rank up the ladder, or nil if already at Chad. Note that
+    /// reaching `next.xpRequired` XP is necessary but not always sufficient -
+    /// Chad Light/Chad also gate on consistency server-side.
+    var next: Rank? {
+        let all = Rank.allCases
+        guard let index = all.firstIndex(of: self), index + 1 < all.count else { return nil }
+        return all[index + 1]
+    }
 }

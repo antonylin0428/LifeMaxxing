@@ -28,7 +28,7 @@ struct RootView: View {
 
     var body: some View {
         if appState.isSignedIn {
-            HomeView()
+            MainTabView()
         } else {
             WelcomeView()
         }

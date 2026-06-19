@@ -3,7 +3,7 @@ import Observation
 
 @Observable
 @MainActor
-final class HomeViewModel {
+final class QuestsViewModel {
     var categories: [CategoryStat] = []
     var lastReward: CompleteTaskResult?
     var errorMessage: String?

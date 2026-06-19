@@ -26,6 +26,17 @@ enum CategoryId: String, Codable, CaseIterable, Identifiable {
     var isOptional: Bool {
         self == .reflection || self == .spiritual
     }
+
+    var systemImageName: String {
+        switch self {
+        case .fitness: return "figure.strengthtraining.traditional"
+        case .screenDiscipline: return "iphone"
+        case .focus: return "book.fill"
+        case .personalGoals: return "target"
+        case .reflection: return "leaf.fill"
+        case .spiritual: return "sparkles"
+        }
+    }
 }
 
 /// Mirrors a CategoryStats item returned by GET /me/categories.

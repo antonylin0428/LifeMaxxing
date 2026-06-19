@@ -38,10 +38,5 @@ struct ProfileView: View {
         }
         .navigationTitle("Profile")
         .task { await viewModel.load() }
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink("Friends") { FriendsListView() }
-            }
-        }
     }
 }
