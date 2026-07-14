@@ -23,6 +23,25 @@ struct ProfileView: View {
                         }
                     }
                 }
+                Section("Communities") {
+                    NavigationLink("Create a Community") {
+                        if user.isPremium {
+                            CreateCommunityView()
+                        } else {
+                            PremiumUpsellView()
+                        }
+                    }
+                }
+                Section {
+                    Toggle("Premium Access (mock)", isOn: Binding(
+                        get: { user.isPremium },
+                        set: { newValue in Task { await viewModel.setMockPremium(newValue) } }
+                    ))
+                } header: {
+                    Text("Developer / Testing")
+                } footer: {
+                    Text("No real payment - toggles the mock isPremium flag used to test the Create Community gate.")
+                }
             }
             if let error = viewModel.errorMessage {
                 ErrorBanner(message: error)

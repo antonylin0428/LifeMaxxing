@@ -18,6 +18,15 @@ struct VerifyEmailView: View {
                 Task { await viewModel.confirmSignUp() }
             }
             .disabled(viewModel.isLoading)
+
+            Button("Resend Code") {
+                Task { await viewModel.resendVerificationCode() }
+            }
+            .disabled(viewModel.isLoading)
+
+            Button("Use a Different Email", role: .destructive) {
+                viewModel.cancelVerification()
+            }
         }
         .navigationTitle("Verify Email")
     }

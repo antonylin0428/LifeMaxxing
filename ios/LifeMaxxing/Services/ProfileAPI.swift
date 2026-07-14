@@ -8,6 +8,10 @@ struct UpdateCategoryConfigRequest: Encodable {
     let enabled: Bool
 }
 
+struct SetMockPremiumRequest: Encodable {
+    let isPremium: Bool
+}
+
 struct ProfileAPI {
     static let shared = ProfileAPI()
 
@@ -27,5 +31,12 @@ struct ProfileAPI {
             method: .put,
             body: body
         )
+    }
+
+    /// TESTING-ONLY: flips the mock premium flag with no payment behind it.
+    /// See backend/lambdas/setMockPremium - remove once real payments exist.
+    func setMockPremium(_ isPremium: Bool) async throws {
+        let body = SetMockPremiumRequest(isPremium: isPremium)
+        let _: EmptyResponse = try await APIClient.shared.request(path: "/me/premium", method: .put, body: body)
     }
 }

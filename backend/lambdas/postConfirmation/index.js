@@ -29,6 +29,9 @@ exports.handler = async (event) => {
       currentSeasonId: 'none',
       rank: 'LOW_TIER_NORMIE_1',
       rankIndex: 0,
+      // Mock premium flag (see setMockPremium) - no real payments yet.
+      // Gates community creation; everyone starts non-premium.
+      isPremium: false,
       activeDaysLast30: 0,
       activeDaysLast60: 0,
       totalXPToday: 0,

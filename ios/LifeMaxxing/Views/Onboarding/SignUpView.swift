@@ -23,8 +23,5 @@ struct SignUpView: View {
             .disabled(viewModel.isLoading)
         }
         .navigationTitle("Sign Up")
-        .navigationDestination(isPresented: .constant(viewModel.pendingVerificationEmail != nil)) {
-            VerifyEmailView()
-        }
     }
 }

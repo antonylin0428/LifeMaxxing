@@ -17,6 +17,7 @@ Globals:
         XP_EVENTS_TABLE: !Ref XPEventsTable
         FRIEND_REQUESTS_TABLE: !Ref FriendRequestsTable
         FRIENDSHIPS_TABLE: !Ref FriendshipsTable
+        COMMUNITIES_TABLE: !Ref CommunitiesTable
 
 Resources:
 
@@ -221,6 +222,23 @@ Resources:
         - AttributeName: SK
           KeyType: RANGE
 
+  # Communities: creation is premium-gated (see createCommunity). Minimal
+  # schema for now - no membership/join table yet, that's separate scope.
+  CommunitiesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+
   # ---------------------------------------------------------------------
   # Lambda functions - one per route, least-privilege IAM per function.
   # ---------------------------------------------------------------------
@@ -337,6 +355,47 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /me/categories/{categoryId}
             Method: PUT
+
+  # TESTING-ONLY mock entitlement toggle - see lambdas/setMockPremium.
+  # Remove once a real payment webhook is the source of truth for isPremium.
+  SetMockPremiumFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/setMockPremium/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:UpdateItem
+              Resource: !GetAtt UsersTable.Arn
+      Events:
+        SetMockPremium:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /me/premium
+            Method: PUT
+
+  CreateCommunityFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/createCommunity/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:GetItem
+              Resource: !GetAtt UsersTable.Arn
+            - Effect: Allow
+              Action: dynamodb:PutItem
+              Resource: !GetAtt CommunitiesTable.Arn
+      Events:
+        CreateCommunity:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /communities
+            Method: POST
 
   SearchFriendsFunction:
     Type: AWS::Serverless::Function
@@ -508,3 +567,5 @@ Outputs:
     Value: !Ref FriendRequestsTable
   FriendshipsTableName:
     Value: !Ref FriendshipsTable
+  CommunitiesTableName:
+    Value: !Ref CommunitiesTable

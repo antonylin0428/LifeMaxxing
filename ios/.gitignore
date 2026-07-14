@@ -2,5 +2,6 @@ LifeMaxxing.xcodeproj/
 .build/
 .swiftpm/
 DerivedData/
+build/
 xcuserdata/
 *.xcworkspace/xcuserdata/

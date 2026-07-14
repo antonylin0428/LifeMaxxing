@@ -22,4 +22,15 @@ final class ProfileViewModel {
             errorMessage = error.localizedDescription
         }
     }
+
+    /// TESTING-ONLY mock premium toggle - see ProfileAPI.setMockPremium.
+    func setMockPremium(_ isPremium: Bool) async {
+        errorMessage = nil
+        do {
+            try await ProfileAPI.shared.setMockPremium(isPremium)
+            await load()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
 }

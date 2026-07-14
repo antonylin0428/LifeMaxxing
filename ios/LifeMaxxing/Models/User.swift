@@ -10,4 +10,8 @@ struct User: Codable, Identifiable {
     let rank: Rank
     let rankIndex: Int
     let activeDaysLast30: Int
+    /// Mock entitlement flag - no real payments yet (see setMockPremium).
+    /// Gates the Create Community screen; the server re-checks this
+    /// independently on POST /communities, this is UX-only on the client.
+    let isPremium: Bool
 }
