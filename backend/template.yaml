@@ -524,6 +524,58 @@ Resources:
             Path: /friends/requests
             Method: GET
 
+  # Runs daily at 03:00 UTC: updates activeDaysLast30/60 and eliteWeeksCount
+  # so Chad Light / Chad rank gates can actually be crossed.
+  DailyMaintenanceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/dailyMaintenance/
+      Handler: index.handler
+      Timeout: 300
+      MemorySize: 512
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:Scan
+              Resource: !GetAtt UsersTable.Arn
+            - Effect: Allow
+              Action: dynamodb:Query
+              Resource:
+                - !GetAtt DailyLogsTable.Arn
+                - !GetAtt XPEventsTable.Arn
+                - !GetAtt CategoryStatsTable.Arn
+            - Effect: Allow
+              Action: dynamodb:UpdateItem
+              Resource: !GetAtt UsersTable.Arn
+      Events:
+        DailySchedule:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 3 * * ? *)
+            Description: Daily user stats maintenance
+
+  # Runs weekly on Monday 04:00 UTC: replenishes streak freeze allowance.
+  WeeklyMaintenanceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/weeklyMaintenance/
+      Handler: index.handler
+      Timeout: 300
+      MemorySize: 512
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:Scan
+                - dynamodb:UpdateItem
+              Resource: !GetAtt CategoryStatsTable.Arn
+      Events:
+        WeeklySchedule:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 4 ? * MON *)
+            Description: Weekly streak freeze replenishment
+
   LeaderboardFunction:
     Type: AWS::Serverless::Function
     Properties:

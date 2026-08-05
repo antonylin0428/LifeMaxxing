@@ -31,4 +31,17 @@ final class QuestsViewModel {
             errorMessage = error.localizedDescription
         }
     }
+
+    /// Compares the server's lastCompletedDate (YYYY-MM-DD UTC) to today in
+    /// UTC so the check matches the server's own day-boundary logic exactly.
+    func isCompletedToday(_ category: CategoryStat) -> Bool {
+        guard let last = category.lastCompletedDate else { return false }
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "UTC")!
+        let todayUTC = cal.startOfDay(for: Date())
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(identifier: "UTC")!
+        return last == formatter.string(from: todayUTC)
+    }
 }

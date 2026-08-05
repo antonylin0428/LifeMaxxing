@@ -23,6 +23,11 @@ struct ProfileView: View {
                         }
                     }
                 }
+                Section("Settings") {
+                    NavigationLink("Category Settings") {
+                        CategorySetupView()
+                    }
+                }
                 Section("Communities") {
                     NavigationLink("Create a Community") {
                         if user.isPremium {
@@ -32,6 +37,7 @@ struct ProfileView: View {
                         }
                     }
                 }
+                #if DEBUG
                 Section {
                     Toggle("Premium Access (mock)", isOn: Binding(
                         get: { user.isPremium },
@@ -42,6 +48,7 @@ struct ProfileView: View {
                 } footer: {
                     Text("No real payment - toggles the mock isPremium flag used to test the Create Community gate.")
                 }
+                #endif
             }
             if let error = viewModel.errorMessage {
                 ErrorBanner(message: error)

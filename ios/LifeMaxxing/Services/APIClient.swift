@@ -1,5 +1,9 @@
 import Foundation
 
+extension Notification.Name {
+    static let sessionExpired = Notification.Name("LifeMaxxing.sessionExpired")
+}
+
 enum HTTPMethod: String {
     case get = "GET"
     case post = "POST"
@@ -58,6 +62,12 @@ struct APIClient {
                 throw APIError.decoding(error)
             }
         case 401:
+            // Post a notification so any active AppState observer can sign out
+            // and route back to WelcomeView. The throw still propagates so the
+            // calling ViewModel can show an error if the observer hasn't fired yet.
+            await MainActor.run {
+                NotificationCenter.default.post(name: .sessionExpired, object: nil)
+            }
             throw APIError.unauthorized
         default:
             let message = String(data: data, encoding: .utf8)

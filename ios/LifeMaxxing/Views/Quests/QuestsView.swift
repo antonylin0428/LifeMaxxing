@@ -8,26 +8,32 @@ struct QuestsView: View {
 
     var body: some View {
         ZStack {
-            List(viewModel.categories) { category in
+            List(viewModel.categories.filter { $0.enabled != false }) { category in
+                let done = viewModel.isCompletedToday(category)
                 Button {
+                    guard !done else { return }
                     Task { await viewModel.complete(category.categoryId) }
                 } label: {
                     HStack {
                         VStack(alignment: .leading) {
                             Text(category.categoryId.displayName)
                                 .font(.headline)
-                            Text("Streak: \(category.currentStreak) days")
+                                .foregroundStyle(done ? .secondary : .primary)
+                            Text(done ? "Done today ✓" : "Streak: \(category.currentStreak) days")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
-                        Image(systemName: "checkmark.circle")
+                        Image(systemName: done ? "checkmark.circle.fill" : "checkmark.circle")
+                            .foregroundStyle(done ? .green : .secondary)
                     }
                 }
+                .disabled(done)
             }
             .overlay {
                 if viewModel.isLoading { LoadingView() }
             }
+            .refreshable { await viewModel.load() }
 
             if let reward = viewModel.lastReward {
                 XPRewardOverlay(result: reward)

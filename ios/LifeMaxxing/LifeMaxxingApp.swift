@@ -1,3 +1,4 @@
+import Amplify
 import SwiftUI
 
 @main
@@ -31,12 +32,29 @@ struct RootView: View {
     @Environment(AuthViewModel.self) private var authViewModel
 
     var body: some View {
-        if appState.isSignedIn {
-            MainTabView()
-        } else if authViewModel.pendingVerificationEmail != nil {
-            NavigationStack { VerifyEmailView() }
-        } else {
-            WelcomeView()
+        Group {
+            if appState.isSignedIn {
+                MainTabView()
+            } else if authViewModel.pendingVerificationEmail != nil {
+                NavigationStack { VerifyEmailView() }
+            } else {
+                WelcomeView()
+            }
+        }
+        .task {
+            // Restore session on cold launch — Amplify caches tokens in Keychain
+            // so a valid session survives app restarts without re-login.
+            guard !appState.isSignedIn else { return }
+            if let session = try? await Amplify.Auth.fetchAuthSession(),
+               session.isSignedIn {
+                appState.isSignedIn = true
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .sessionExpired)) { _ in
+            Task {
+                await AuthService.shared.signOut()
+                appState.isSignedIn = false
+            }
         }
     }
 }
