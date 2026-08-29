@@ -11,6 +11,7 @@ struct LifeMaxxingApp: App {
         _appState = State(initialValue: state)
         _authViewModel = State(initialValue: AuthViewModel(appState: state))
         try? AuthService.shared.configure()
+        Self.applyGlobalAppearance()
     }
 
     var body: some Scene {
@@ -20,13 +21,24 @@ struct LifeMaxxingApp: App {
                 .environment(authViewModel)
         }
     }
+
+    private static func applyGlobalAppearance() {
+        let bgColor = UIColor(red: 0.965, green: 0.961, blue: 0.949, alpha: 1)
+        let textColor = UIColor(red: 0.102, green: 0.102, blue: 0.102, alpha: 1)
+
+        let nav = UINavigationBarAppearance()
+        nav.configureWithOpaqueBackground()
+        nav.backgroundColor = bgColor
+        nav.shadowColor = .clear
+        nav.titleTextAttributes = [.foregroundColor: textColor]
+        nav.largeTitleTextAttributes = [.foregroundColor: textColor]
+        UINavigationBar.appearance().standardAppearance = nav
+        UINavigationBar.appearance().compactAppearance = nav
+        UINavigationBar.appearance().scrollEdgeAppearance = nav
+        UINavigationBar.appearance().tintColor = textColor
+    }
 }
 
-/// Routes between the signed-out, pending-verification, and signed-in flows
-/// based on AppState/AuthViewModel. Pending verification is checked here -
-/// not via a per-screen navigationDestination - so there's always exactly
-/// one way back to VerifyEmailView no matter how far the user backs out
-/// (Welcome, Sign Up, or Sign In all funnel through this same check).
 struct RootView: View {
     @Environment(AppState.self) private var appState
     @Environment(AuthViewModel.self) private var authViewModel
@@ -42,8 +54,6 @@ struct RootView: View {
             }
         }
         .task {
-            // Restore session on cold launch — Amplify caches tokens in Keychain
-            // so a valid session survives app restarts without re-login.
             guard !appState.isSignedIn else { return }
             if let session = try? await Amplify.Auth.fetchAuthSession(),
                session.isSignedIn {

@@ -5,21 +5,47 @@ struct SignInView: View {
 
     var body: some View {
         @Bindable var viewModel = viewModel
-        Form {
-            TextField("Email", text: $viewModel.email)
-                .textInputAutocapitalization(.never)
-                .keyboardType(.emailAddress)
-            SecureField("Password", text: $viewModel.password)
+        ZStack {
+            Theme.background.ignoresSafeArea()
 
-            if let error = viewModel.errorMessage {
-                ErrorBanner(message: error)
-            }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 32) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Welcome back")
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundStyle(Theme.textPrimary)
+                        Text("Sign in to continue your journey")
+                            .font(.system(size: 15))
+                            .foregroundStyle(Theme.textSecondary)
+                    }
+                    .padding(.top, 8)
 
-            Button("Sign In") {
-                Task { await viewModel.signIn() }
+                    VStack(spacing: 12) {
+                        ThemedTextField("Email", text: $viewModel.email, iconName: "envelope")
+                            .textInputAutocapitalization(.never)
+                            .keyboardType(.emailAddress)
+                        ThemedTextField("Password", text: $viewModel.password, isSecure: true, iconName: "lock")
+                    }
+
+                    if let error = viewModel.errorMessage {
+                        ErrorBanner(message: error)
+                    }
+
+                    Button("Sign In") {
+                        Task { await viewModel.signIn() }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(viewModel.isLoading)
+                }
+                .padding(24)
             }
-            .disabled(viewModel.isLoading)
+            .scrollDismissesKeyboard(.interactively)
+
+            if viewModel.isLoading {
+                LoadingView()
+            }
         }
         .navigationTitle("Sign In")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

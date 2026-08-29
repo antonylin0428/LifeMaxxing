@@ -1,10 +1,7 @@
 import SwiftUI
 
-/// The dashboard overview tab, matching brand/Screenshot 2026-06-19 at
-/// 2.22.10 PM.png. All XP/rank/streak values come from GET /me and
-/// GET /me/categories - nothing here is computed client-side. The
-/// Achievements row is the one exception: it's local mock data (see
-/// Achievement.swift) until a backend model exists.
+/// Dashboard overview — all XP/rank/streak values come from the server
+/// (GET /me and GET /me/categories). Nothing is computed client-side.
 struct HomeView: View {
     @State private var viewModel = DashboardViewModel()
 
@@ -16,71 +13,85 @@ struct HomeView: View {
                 todaysProgress
                 achievements
             }
-            .padding(20)
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            .padding(.bottom, 24)
         }
-        .background(Theme.background.ignoresSafeArea())
+        .lmBackground()
+        .refreshable { await viewModel.load() }
         .overlay {
-            if viewModel.isLoading { LoadingView() }
+            if viewModel.isLoading && viewModel.user == nil { LoadingView() }
         }
         .task { await viewModel.load() }
         .safeAreaInset(edge: .bottom) {
             if let error = viewModel.errorMessage {
-                ErrorBanner(message: error).padding()
+                ErrorBanner(message: error)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 8)
             }
         }
     }
+
+    // MARK: Header
 
     private var header: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(Self.todayDateLabel)
-                    .font(.subheadline)
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Theme.textSecondary)
                 Text("Hey, \(viewModel.user?.username ?? "there") 👋")
-                    .font(.title2.bold())
+                    .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(Theme.textPrimary)
             }
             Spacer()
-            HStack(spacing: 4) {
+            HStack(spacing: 5) {
                 Image(systemName: "flame.fill")
                     .foregroundStyle(.orange)
-                Text("\(viewModel.bestCurrentStreak) day streak")
-                    .font(.subheadline.bold())
+                    .font(.system(size: 14, weight: .bold))
+                Text("\(viewModel.bestCurrentStreak)d streak")
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Theme.textPrimary)
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(Theme.surfaceElevated)
+            .padding(.vertical, 7)
+            .background(Theme.surface)
             .clipShape(Capsule())
+            .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
         }
     }
+
+    // MARK: Rank Card
 
     private var rankCard: some View {
         let rank = viewModel.user?.rank ?? .lowTierNormie1
         let totalXP = viewModel.user?.totalXP ?? 0
         let next = rank.next
 
-        return VStack(alignment: .leading, spacing: 12) {
+        return VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("CURRENT RANK")
-                        .font(.caption.bold())
+                        .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(Theme.textSecondary)
+                        .tracking(1)
                     HStack(spacing: 6) {
                         Image(systemName: "trophy.fill")
-                            .foregroundStyle(Theme.accentGold)
+                            .foregroundStyle(Color(hex: "E8A000"))
+                            .font(.system(size: 16, weight: .bold))
                         Text(rank.displayName)
-                            .font(.title3.bold())
-                            .foregroundStyle(Theme.accentGold)
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundStyle(Theme.textPrimary)
                     }
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 4) {
                     Text("TOTAL XP")
-                        .font(.caption.bold())
+                        .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(Theme.textSecondary)
+                        .tracking(1)
                     Text("\(totalXP)")
-                        .font(.title3.bold())
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundStyle(Theme.textPrimary)
                 }
             }
@@ -90,32 +101,49 @@ struct HomeView: View {
                 let progress = Double(min(max(totalXP - rank.xpRequired, 0), span)) / Double(span)
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("\(totalXP - rank.xpRequired) / \(span) XP")
-                        .font(.caption)
-                        .foregroundStyle(Theme.textSecondary)
-                    ProgressView(value: progress)
-                        .tint(Theme.accentGold)
-                    Text("\(next.displayName) \u{2192}")
-                        .font(.caption.bold())
-                        .foregroundStyle(Theme.accentGold)
+                    HStack {
+                        Text("\(totalXP - rank.xpRequired) / \(span) XP to next rank")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Theme.textSecondary)
+                        Spacer()
+                        Text(next.displayName)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Theme.textPrimary)
+                    }
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                .fill(Theme.surfaceSecondary)
+                                .frame(height: 8)
+                            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                .fill(Theme.highlight)
+                                .frame(width: geo.size.width * CGFloat(progress), height: 8)
+                        }
+                    }
+                    .frame(height: 8)
                 }
             } else {
-                Text("Max rank reached")
-                    .font(.caption.bold())
-                    .foregroundStyle(Theme.accentGold)
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .foregroundStyle(Theme.highlight)
+                    Text("Maximum rank achieved")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Theme.textPrimary)
+                }
             }
         }
         .cardStyle()
     }
 
-    private var todaysProgress: some View {
-        let columns = [GridItem(.flexible()), GridItem(.flexible())]
+    // MARK: Today's Progress
 
-        return VStack(alignment: .leading, spacing: 12) {
+    private var todaysProgress: some View {
+        VStack(alignment: .leading, spacing: 12) {
             Text("Today's Progress")
-                .font(.headline)
+                .font(.system(size: 17, weight: .bold))
                 .foregroundStyle(Theme.textPrimary)
 
+            let columns = [GridItem(.flexible()), GridItem(.flexible())]
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(viewModel.categories) { category in
                     progressCard(for: category)
@@ -127,31 +155,44 @@ struct HomeView: View {
     private func progressCard(for category: CategoryStat) -> some View {
         let done = viewModel.isCompletedToday(category)
 
-        return VStack(alignment: .leading, spacing: 8) {
+        return VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Image(systemName: category.categoryId.systemImageName)
-                    .foregroundStyle(done ? Theme.accentPurple : Theme.textSecondary)
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(done ? Theme.surfaceSecondary : category.categoryId.color)
+                        .frame(width: 32, height: 32)
+                    Image(systemName: category.categoryId.systemImageName)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(done ? Theme.textSecondary : Theme.ink)
+                }
                 Spacer()
                 if category.categoryId.isOptional {
                     Text("opt")
-                        .font(.caption2.bold())
+                        .font(.system(size: 9, weight: .bold))
                         .foregroundStyle(Theme.textSecondary)
-                        .padding(.horizontal, 6)
+                        .padding(.horizontal, 5)
                         .padding(.vertical, 2)
-                        .background(Theme.surfaceElevated)
+                        .background(Theme.surfaceSecondary)
                         .clipShape(Capsule())
                 }
             }
             Text(category.categoryId.displayName)
-                .font(.subheadline.bold())
-                .foregroundStyle(Theme.textPrimary)
-            Text(done ? "Done" : "Not logged")
-                .font(.caption)
-                .foregroundStyle(done ? Theme.accentPurple : Theme.textSecondary)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(done ? Theme.textSecondary : Theme.textPrimary)
+                .lineLimit(2)
+            Text(done ? "Done ✓" : "Not logged")
+                .font(.system(size: 11))
+                .foregroundStyle(done ? Theme.accentGreen : Theme.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .cardStyle()
+        .padding(14)
+        .background(Theme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .shadow(color: .black.opacity(done ? 0.02 : 0.05), radius: 8, x: 0, y: 3)
+        .opacity(done ? 0.75 : 1)
     }
+
+    // MARK: Achievements
 
     private var achievements: some View {
         let unlockedCount = viewModel.achievements.filter(\.isUnlocked).count
@@ -159,41 +200,48 @@ struct HomeView: View {
         return VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Achievements")
-                    .font(.headline)
+                    .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(Theme.textPrimary)
                 Spacer()
-                Text("\(unlockedCount) / \(viewModel.achievements.count) unlocked")
-                    .font(.caption)
+                Text("\(unlockedCount)/\(viewModel.achievements.count)")
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Theme.textSecondary)
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 16) {
+                HStack(spacing: 14) {
                     ForEach(viewModel.achievements) { achievement in
-                        VStack(spacing: 6) {
-                            Image(systemName: achievement.iconName)
-                                .font(.title3)
-                                .foregroundStyle(achievement.isUnlocked ? Theme.accentGold : Theme.textSecondary)
-                                .frame(width: 48, height: 48)
-                                .background(Theme.surfaceElevated)
-                                .clipShape(Circle())
-                                .opacity(achievement.isUnlocked ? 1 : 0.4)
+                        VStack(spacing: 7) {
+                            ZStack {
+                                Circle()
+                                    .fill(achievement.isUnlocked
+                                          ? Color(hex: "FFE07A").opacity(0.6)
+                                          : Theme.surfaceSecondary)
+                                    .frame(width: 52, height: 52)
+                                Image(systemName: achievement.iconName)
+                                    .font(.system(size: 22, weight: .medium))
+                                    .foregroundStyle(achievement.isUnlocked
+                                                     ? Color(hex: "8A6000")
+                                                     : Theme.textSecondary)
+                            }
+                            .opacity(achievement.isUnlocked ? 1 : 0.4)
                             Text(achievement.title)
-                                .font(.caption2)
+                                .font(.system(size: 10, weight: .medium))
                                 .foregroundStyle(Theme.textSecondary)
                                 .multilineTextAlignment(.center)
-                                .frame(width: 64)
+                                .frame(width: 60)
                         }
                     }
                 }
+                .padding(.horizontal, 2)
             }
         }
         .cardStyle()
     }
 
     private static var todayDateLabel: String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .full
-        return formatter.string(from: Date())
+        let f = DateFormatter()
+        f.dateStyle = .full
+        return f.string(from: Date())
     }
 }

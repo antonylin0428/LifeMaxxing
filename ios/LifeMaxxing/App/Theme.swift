@@ -1,28 +1,45 @@
 import SwiftUI
 
-/// Dark/purple/gold palette matching the brand mockup (brand/Screenshot ...).
-/// Centralized here so screens don't hardcode hex values individually.
-enum Theme {
-    static let background = Color(red: 0.07, green: 0.05, blue: 0.12)
-    static let surface = Color(red: 0.12, green: 0.10, blue: 0.18)
-    static let surfaceElevated = Color(red: 0.16, green: 0.13, blue: 0.24)
-    static let accentGold = Color(red: 0.96, green: 0.74, blue: 0.27)
-    static let accentPurple = Color(red: 0.55, green: 0.40, blue: 0.95)
-    static let textPrimary = Color.white
-    static let textSecondary = Color.white.opacity(0.6)
+extension Color {
+    init(hex: String) {
+        let h = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: h).scanHexInt64(&int)
+        let r = Double((int >> 16) & 0xFF) / 255
+        let g = Double((int >> 8) & 0xFF) / 255
+        let b = Double(int & 0xFF) / 255
+        self.init(.sRGB, red: r, green: g, blue: b)
+    }
 }
 
-struct CardBackground: ViewModifier {
+enum Theme {
+    static let background       = Color(hex: "F6F5F2")
+    static let surface          = Color.white
+    static let surfaceSecondary = Color(hex: "EEEDE9")
+    static let textPrimary      = Color(hex: "1A1A1A")
+    static let textSecondary    = Color(hex: "8A8A8A")
+    static let border           = Color(hex: "E5E4E0")
+    static let accentGreen      = Color(hex: "8FBA7A")
+    static let highlight        = Color(hex: "C2F542")
+    static let ink              = Color(hex: "1A1A1A")
+}
+
+struct CardStyle: ViewModifier {
+    var padding: CGFloat = 16
     func body(content: Content) -> some View {
         content
-            .padding(16)
+            .padding(padding)
             .background(Theme.surface)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .shadow(color: .black.opacity(0.06), radius: 12, x: 0, y: 4)
     }
 }
 
 extension View {
-    func cardStyle() -> some View {
-        modifier(CardBackground())
+    func cardStyle(padding: CGFloat = 16) -> some View {
+        modifier(CardStyle(padding: padding))
+    }
+    func lmBackground() -> some View {
+        background(Theme.background.ignoresSafeArea())
     }
 }

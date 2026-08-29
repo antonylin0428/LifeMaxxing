@@ -6,22 +6,44 @@ struct CreateCommunityView: View {
     @State private var viewModel = CreateCommunityViewModel()
 
     var body: some View {
-        Form {
+        ZStack {
+            Theme.background.ignoresSafeArea()
+
             if let community = viewModel.createdCommunity {
-                Section {
-                    Text("Community created! 🎉")
-                        .font(.headline)
-                    Text(community.name)
-                        .font(.title3.bold())
-                    if let description = community.description {
-                        Text(description)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                successView(community: community)
             } else {
-                @Bindable var viewModel = viewModel
-                TextField("Community Name", text: $viewModel.name)
-                TextField("Description (optional)", text: $viewModel.description)
+                formView
+            }
+
+            if viewModel.isLoading {
+                LoadingView()
+            }
+        }
+        .navigationTitle("Create Community")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    // MARK: Form
+
+    private var formView: some View {
+        @Bindable var viewModel = viewModel
+        return ScrollView {
+            VStack(alignment: .leading, spacing: 28) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("New Community")
+                        .font(.system(size: 26, weight: .bold))
+                        .foregroundStyle(Theme.textPrimary)
+                    Text("Create a space for people to compete together")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+                .padding(.top, 8)
+
+                VStack(spacing: 12) {
+                    ThemedTextField("Community name", text: $viewModel.name, iconName: "person.3")
+                    ThemedTextField("Description (optional)", text: $viewModel.description,
+                                    iconName: "text.alignleft")
+                }
 
                 if let error = viewModel.errorMessage {
                     ErrorBanner(message: error)
@@ -30,12 +52,44 @@ struct CreateCommunityView: View {
                 Button("Create Community") {
                     Task { await viewModel.createCommunity() }
                 }
-                .disabled(viewModel.isLoading || viewModel.name.trimmingCharacters(in: .whitespaces).isEmpty)
+                .buttonStyle(PrimaryButtonStyle())
+                .disabled(viewModel.isLoading ||
+                          viewModel.name.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            .padding(24)
+        }
+        .scrollDismissesKeyboard(.interactively)
+    }
+
+    // MARK: Success
+
+    private func successView(community: Community) -> some View {
+        VStack(spacing: 20) {
+            ZStack {
+                Circle()
+                    .fill(Color(hex: "B0E8AC").opacity(0.4))
+                    .frame(width: 80, height: 80)
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 40, weight: .medium))
+                    .foregroundStyle(Color(hex: "2A8A28"))
+            }
+
+            VStack(spacing: 8) {
+                Text("Community Created!")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(Theme.textPrimary)
+                Text(community.name)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Theme.textSecondary)
+                if let description = community.description {
+                    Text(description)
+                        .font(.system(size: 14))
+                        .foregroundStyle(Theme.textSecondary)
+                        .multilineTextAlignment(.center)
+                }
             }
         }
-        .overlay {
-            if viewModel.isLoading { LoadingView() }
-        }
-        .navigationTitle("Create Community")
+        .padding(40)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
