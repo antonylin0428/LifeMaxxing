@@ -1,6 +1,23 @@
 import SwiftUI
 
 extension CategoryId {
+    var questPrompt: String {
+        switch self {
+        case .fitness:
+            return "Complete a workout, go for a run, or do any form of physical activity today. Even a 20-minute walk counts."
+        case .screenDiscipline:
+            return "Stay off social media and limit recreational screen time. Put the phone down and be present."
+        case .focus:
+            return "Put in deep, focused work or study time. No distractions — just you and the task at hand."
+        case .personalGoals:
+            return "Make meaningful progress on one of your personal goals. One step forward is all it takes."
+        case .reflection:
+            return "Take time to journal, meditate, or reflect on your day. Clarity comes from slowing down."
+        case .spiritual:
+            return "Engage in prayer, reading, or a spiritual practice that centers and grounds you."
+        }
+    }
+
     var color: Color {
         switch self {
         case .fitness:          return Color(hex: "FFE07A")

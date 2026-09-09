@@ -34,12 +34,17 @@ exports.handler = async (event) => {
     return http.badRequest('Request body must be valid JSON');
   }
 
-  const { categoryId, idempotencyKey } = body;
+  const { categoryId, idempotencyKey, photoS3Key } = body;
   if (!categoryId || !isValidCategory(categoryId)) {
     return http.badRequest('categoryId is required and must be a known category');
   }
   if (!idempotencyKey || typeof idempotencyKey !== 'string') {
     return http.badRequest('idempotencyKey is required');
+  }
+  if (categoryId === 'FITNESS') {
+    if (!photoS3Key || typeof photoS3Key !== 'string' || !photoS3Key.startsWith('gym-photos/')) {
+      return http.badRequest('FITNESS completion requires a valid photoS3Key');
+    }
   }
 
   const serverDate = todayString();
@@ -133,6 +138,7 @@ exports.handler = async (event) => {
               idempotencyKey,
               xpAwarded: xp.finalXPAwarded,
               completedAtServerTime: nowIso,
+              ...(photoS3Key ? { photoS3Key } : {}),
             },
             ConditionExpression: 'attribute_not_exists(PK) AND attribute_not_exists(SK)',
           },
@@ -173,7 +179,8 @@ exports.handler = async (event) => {
           Update: {
             TableName: TableNames.USERS,
             Key: { PK: `USER#${userSub}`, SK: 'PROFILE' },
-            UpdateExpression: 'SET totalXP = :newTotalXP, totalXPToday = :newTotalXPToday, totalXPTodayDate = :serverDate, rank = :rankLabel, rankIndex = :rankIndex, updatedAt = :nowIso',
+            UpdateExpression: 'SET totalXP = :newTotalXP, totalXPToday = :newTotalXPToday, totalXPTodayDate = :serverDate, #rank = :rankLabel, rankIndex = :rankIndex, updatedAt = :nowIso',
+            ExpressionAttributeNames: { '#rank': 'rank' },
             ExpressionAttributeValues: {
               ':newTotalXP': newTotalXP,
               ':newTotalXPToday': totalXPAlreadyToday + xp.finalXPAwarded,

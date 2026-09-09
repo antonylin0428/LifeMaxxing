@@ -3,6 +3,7 @@ import Foundation
 struct CompleteTaskRequest: Encodable {
     let categoryId: String
     let idempotencyKey: String
+    let photoS3Key: String?
 }
 
 struct UseStreakFreezeRequest: Encodable {
@@ -12,8 +13,8 @@ struct UseStreakFreezeRequest: Encodable {
 struct TasksAPI {
     static let shared = TasksAPI()
 
-    func completeTask(categoryId: CategoryId) async throws -> CompleteTaskResult {
-        let body = CompleteTaskRequest(categoryId: categoryId.rawValue, idempotencyKey: UUID().uuidString)
+    func completeTask(categoryId: CategoryId, photoS3Key: String? = nil) async throws -> CompleteTaskResult {
+        let body = CompleteTaskRequest(categoryId: categoryId.rawValue, idempotencyKey: UUID().uuidString, photoS3Key: photoS3Key)
         return try await APIClient.shared.request(path: "/tasks/complete", method: .post, body: body)
     }
 

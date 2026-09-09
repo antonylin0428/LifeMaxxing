@@ -27,50 +27,46 @@ struct MainTabView: View {
 private struct LMTabBar: View {
     @Binding var selectedTab: Int
 
-    private let items: [(icon: String, label: String)] = [
-        ("house.fill", "Home"),
-        ("target", "Quests"),
-        ("person.2.fill", "Friends"),
-        ("person.crop.circle.fill", "Profile"),
+    private let items: [String] = [
+        "house.fill",
+        "target",
+        "person.2.fill",
+        "person.crop.circle.fill",
     ]
 
     var body: some View {
         HStack(spacing: 0) {
             ForEach(0..<4, id: \.self) { index in
                 Button {
-                    withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.75)) {
                         selectedTab = index
                     }
                 } label: {
-                    VStack(spacing: 5) {
-                        ZStack {
-                            if selectedTab == index {
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .fill(Theme.ink)
-                                    .frame(width: 48, height: 40)
-                            }
-                            Image(systemName: items[index].icon)
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundStyle(selectedTab == index ? .white : Color(hex: "B0B0B0"))
+                    ZStack {
+                        if selectedTab == index {
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(.white)
+                                .frame(width: 52, height: 44)
                         }
-                        Text(items[index].label)
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(selectedTab == index ? Theme.ink : Color(hex: "B0B0B0"))
+                        Image(systemName: items[index])
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(selectedTab == index
+                                             ? Color(hex: "1A1A1A")
+                                             : .white.opacity(0.55))
                     }
                     .frame(maxWidth: .infinity)
+                    .frame(height: 56)
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 24)
-        .padding(.top, 12)
-        .padding(.bottom, 20)
+        .padding(.horizontal, 12)
         .background(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(Theme.surface)
-                .shadow(color: .black.opacity(0.08), radius: 24, x: 0, y: -4)
+            Capsule()
+                .fill(Color(hex: "1A1A1A"))
+                .shadow(color: .black.opacity(0.25), radius: 20, x: 0, y: 8)
         )
-        .padding(.horizontal, 16)
-        .padding(.bottom, 8)
+        .padding(.horizontal, 48)
+        .padding(.bottom, 12)
     }
 }

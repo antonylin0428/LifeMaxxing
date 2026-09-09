@@ -11,10 +11,24 @@ enum HTTPMethod: String {
     case delete = "DELETE"
 }
 
-enum APIError: Error {
+enum APIError: Error, LocalizedError {
     case unauthorized
     case server(statusCode: Int, message: String?)
     case decoding(Error)
+
+    var errorDescription: String? {
+        switch self {
+        case .unauthorized:
+            return "Session expired — please sign in again."
+        case .server(let code, let message):
+            if let message, !message.isEmpty {
+                return "Server error (\(code)): \(message)"
+            }
+            return "Server error (HTTP \(code))."
+        case .decoding(let error):
+            return "Response format error: \(error.localizedDescription)"
+        }
+    }
 }
 
 /// Thin authenticated networking layer. Every backend call in the app goes

@@ -18,6 +18,7 @@ Globals:
         FRIEND_REQUESTS_TABLE: !Ref FriendRequestsTable
         FRIENDSHIPS_TABLE: !Ref FriendshipsTable
         COMMUNITIES_TABLE: !Ref CommunitiesTable
+        PHOTOS_BUCKET: !Ref GymPhotosBucket
 
 Resources:
 
@@ -222,6 +223,29 @@ Resources:
         - AttributeName: SK
           KeyType: RANGE
 
+  # Gym photos: private S3 bucket. iOS never gets AWS credentials; it
+  # receives a pre-signed PUT URL from GetUploadUrlFunction (5-min expiry),
+  # uploads directly, then passes only the s3Key to completeTask.
+  # 30-day lifecycle keeps storage costs bounded (~$0.023/GB/month).
+  GymPhotosBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteAfter30Days
+            Status: Enabled
+            ExpirationInDays: 30
+      CorsConfiguration:
+        CorsRules:
+          - AllowedMethods:
+              - PUT
+            AllowedOrigins:
+              - '*'
+            AllowedHeaders:
+              - '*'
+            MaxAge: 3000
+
   # Communities: creation is premium-gated (see createCommunity). Minimal
   # schema for now - no membership/join table yet, that's separate scope.
   CommunitiesTable:
@@ -268,7 +292,10 @@ Resources:
                 - !GetAtt CategoryStatsTable.Arn
                 - !GetAtt UsersTable.Arn
             - Effect: Allow
-              Action: dynamodb:TransactWriteItems
+              Action:
+                - dynamodb:TransactWriteItems
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
               Resource:
                 - !GetAtt DailyLogsTable.Arn
                 - !GetAtt XPEventsTable.Arn
@@ -456,7 +483,10 @@ Resources:
                 - !GetAtt FriendRequestsTable.Arn
                 - !GetAtt UsersTable.Arn
             - Effect: Allow
-              Action: dynamodb:TransactWriteItems
+              Action:
+                - dynamodb:TransactWriteItems
+                - dynamodb:PutItem
+                - dynamodb:DeleteItem
               Resource:
                 - !GetAtt FriendRequestsTable.Arn
                 - !GetAtt FriendshipsTable.Arn
@@ -599,6 +629,50 @@ Resources:
             Path: /leaderboard/friends
             Method: GET
 
+  GetUploadUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/getUploadUrl/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: s3:PutObject
+              Resource: !Sub "${GymPhotosBucket.Arn}/gym-photos/*"
+      Events:
+        GetUploadUrl:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /tasks/upload-url
+            Method: GET
+
+  GetFriendsFeedFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/getFriendsFeed/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:Query
+              Resource:
+                - !GetAtt FriendshipsTable.Arn
+                - !GetAtt DailyLogsTable.Arn
+            - Effect: Allow
+              Action: dynamodb:BatchGetItem
+              Resource: !GetAtt UsersTable.Arn
+            - Effect: Allow
+              Action: s3:GetObject
+              Resource: !Sub "${GymPhotosBucket.Arn}/gym-photos/*"
+      Events:
+        GetFriendsFeed:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /feed/friends
+            Method: GET
+
 Outputs:
   HttpApiUrl:
     Description: Base URL for the HTTP API
@@ -621,3 +695,5 @@ Outputs:
     Value: !Ref FriendshipsTable
   CommunitiesTableName:
     Value: !Ref CommunitiesTable
+  GymPhotosBucketName:
+    Value: !Ref GymPhotosBucket

@@ -42,11 +42,16 @@ struct LifeMaxxingApp: App {
 struct RootView: View {
     @Environment(AppState.self) private var appState
     @Environment(AuthViewModel.self) private var authViewModel
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         Group {
             if appState.isSignedIn {
-                MainTabView()
+                if appState.hasCompletedOnboarding {
+                    MainTabView()
+                } else {
+                    OnboardingView()
+                }
             } else if authViewModel.pendingVerificationEmail != nil {
                 NavigationStack { VerifyEmailView() }
             } else {
@@ -57,7 +62,14 @@ struct RootView: View {
             guard !appState.isSignedIn else { return }
             if let session = try? await Amplify.Auth.fetchAuthSession(),
                session.isSignedIn {
+                // Session restore = returning user, skip onboarding
+                appState.hasCompletedOnboarding = true
                 appState.isSignedIn = true
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .background {
+                FocusTimerManager.shared.handleBackground()
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .sessionExpired)) { _ in

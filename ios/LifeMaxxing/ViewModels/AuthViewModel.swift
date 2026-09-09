@@ -36,13 +36,17 @@ final class AuthViewModel {
     }
 
     func confirmSignUp() async {
-        guard let email = pendingVerificationEmail else { return }
+        guard let emailToConfirm = pendingVerificationEmail else { return }
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
         do {
-            try await AuthService.shared.confirmSignUp(email: email, code: verificationCode)
+            try await AuthService.shared.confirmSignUp(email: emailToConfirm, code: verificationCode)
+            // Auto sign-in so the user flows into onboarding without re-entering credentials
+            try await AuthService.shared.signIn(email: emailToConfirm, password: password)
             pendingVerificationEmail = nil
+            // hasCompletedOnboarding stays false → RootView routes to OnboardingView
+            appState.isSignedIn = true
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -99,5 +103,6 @@ final class AuthViewModel {
         await AuthService.shared.signOut()
         appState.isSignedIn = false
         appState.currentUsername = nil
+        appState.hasCompletedOnboarding = false
     }
 }
