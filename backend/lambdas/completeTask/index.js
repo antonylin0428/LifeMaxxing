@@ -41,9 +41,9 @@ exports.handler = async (event) => {
   if (!idempotencyKey || typeof idempotencyKey !== 'string') {
     return http.badRequest('idempotencyKey is required');
   }
-  if (categoryId === 'FITNESS') {
-    if (!photoS3Key || typeof photoS3Key !== 'string' || !photoS3Key.startsWith('gym-photos/')) {
-      return http.badRequest('FITNESS completion requires a valid photoS3Key');
+  if (photoS3Key !== undefined && photoS3Key !== null) {
+    if (typeof photoS3Key !== 'string' || !photoS3Key.startsWith('gym-photos/')) {
+      return http.badRequest('photoS3Key must start with gym-photos/');
     }
   }
 
