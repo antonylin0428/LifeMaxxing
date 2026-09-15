@@ -10,8 +10,8 @@ struct User: Codable, Identifiable {
     let rank: Rank
     let rankIndex: Int
     let activeDaysLast30: Int
-    /// Mock entitlement flag - no real payments yet (see setMockPremium).
-    /// Gates the Create Community screen; the server re-checks this
-    /// independently on POST /communities, this is UX-only on the client.
-    let isPremium: Bool
+    /// Set to true after the $2.99 StoreKit one-time purchase is verified server-side.
+    let hasCommunityAccess: Bool
+    /// Set of achievement IDs granted server-side (e.g. "first-workout", "streak-7").
+    let achievements: [String]?
 }

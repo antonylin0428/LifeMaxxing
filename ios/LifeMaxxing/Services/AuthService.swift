@@ -169,6 +169,13 @@ final class AuthService {
         _ = await Amplify.Auth.signOut()
     }
 
+    /// Returns the signed-in user's Cognito sub (UUID string).
+    /// Used as StoreKit appAccountToken to tie a purchase to a user server-side.
+    func currentUserSub() async throws -> String {
+        let user = try await Amplify.Auth.getCurrentUser()
+        return user.userId
+    }
+
     /// The Access token (NOT the ID token) is what every API Gateway call
     /// must send as `Authorization: Bearer <token>`.
     func currentAccessToken() async throws -> String {

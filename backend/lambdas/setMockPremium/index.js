@@ -12,6 +12,8 @@ const { getUserSub, http, dynamo } = require('lifemaxxing-shared');
 const { ddb, TableNames } = dynamo;
 
 exports.handler = async (event) => {
+  if (process.env.ENVIRONMENT !== 'dev') return http.notFound('Not found');
+
   let userSub;
   try {
     userSub = getUserSub(event);
@@ -25,16 +27,16 @@ exports.handler = async (event) => {
   } catch {
     return http.badRequest('Request body must be valid JSON');
   }
-  if (typeof body.isPremium !== 'boolean') {
-    return http.badRequest('isPremium (boolean) is required');
+  if (typeof body.hasCommunityAccess !== 'boolean') {
+    return http.badRequest('hasCommunityAccess (boolean) is required');
   }
 
   await ddb.send(new UpdateCommand({
     TableName: TableNames.USERS,
     Key: { PK: `USER#${userSub}`, SK: 'PROFILE' },
-    UpdateExpression: 'SET isPremium = :isPremium',
-    ExpressionAttributeValues: { ':isPremium': body.isPremium },
+    UpdateExpression: 'SET hasCommunityAccess = :v',
+    ExpressionAttributeValues: { ':v': body.hasCommunityAccess },
   }));
 
-  return http.ok({ isPremium: body.isPremium });
+  return http.ok({ hasCommunityAccess: body.hasCommunityAccess });
 };

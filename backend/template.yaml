@@ -19,6 +19,7 @@ Globals:
         FRIENDSHIPS_TABLE: !Ref FriendshipsTable
         COMMUNITIES_TABLE: !Ref CommunitiesTable
         PHOTOS_BUCKET: !Ref GymPhotosBucket
+        PURCHASE_EVENTS_TABLE: !Ref PurchaseEventsTable
 
 Resources:
 
@@ -246,8 +247,25 @@ Resources:
               - '*'
             MaxAge: 3000
 
-  # Communities: creation is premium-gated (see createCommunity). Minimal
-  # schema for now - no membership/join table yet, that's separate scope.
+  # StoreKit purchase deduplication table. Stores transactionId for every
+  # processed App Store receipt so replays and double-grants are rejected.
+  # TTL of 90 days keeps the table small.
+  PurchaseEventsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  # Communities: PK=COMMUNITY#<id>, SK=PROFILE|MEMBER#<sub>
+  # GSI1 (GSI1PK=USER#<sub>, GSI1SK=COMMUNITY#<id>) enables listMyCommunities queries.
   CommunitiesTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -257,11 +275,24 @@ Resources:
           AttributeType: S
         - AttributeName: SK
           AttributeType: S
+        - AttributeName: GSI1PK
+          AttributeType: S
+        - AttributeName: GSI1SK
+          AttributeType: S
       KeySchema:
         - AttributeName: PK
           KeyType: HASH
         - AttributeName: SK
           KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1
+          KeySchema:
+            - AttributeName: GSI1PK
+              KeyType: HASH
+            - AttributeName: GSI1SK
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
 
   # ---------------------------------------------------------------------
   # Lambda functions - one per route, least-privilege IAM per function.
@@ -383,8 +414,8 @@ Resources:
             Path: /me/categories/{categoryId}
             Method: PUT
 
-  # TESTING-ONLY mock entitlement toggle - see lambdas/setMockPremium.
-  # Remove once a real payment webhook is the source of truth for isPremium.
+  # Dev-only entitlement toggle - gated by ENVIRONMENT=dev env var at runtime.
+  # Returns 404 in production. Remove this function entirely post-launch.
   SetMockPremiumFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -423,6 +454,93 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /communities
             Method: POST
+
+  GetCommunityFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/getCommunity/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:GetItem
+              Resource: !GetAtt CommunitiesTable.Arn
+      Events:
+        GetCommunity:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /communities/{communityId}
+            Method: GET
+
+  JoinCommunityFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/joinCommunity/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:GetItem
+              Resource: !GetAtt CommunitiesTable.Arn
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+              Resource: !GetAtt CommunitiesTable.Arn
+      Events:
+        JoinCommunity:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /communities/{communityId}/join
+            Method: POST
+
+  ListMyCommunitiesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/listMyCommunities/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:Query
+              Resource:
+                - !GetAtt CommunitiesTable.Arn
+                - !Sub "${CommunitiesTable.Arn}/index/GSI1"
+            - Effect: Allow
+              Action: dynamodb:BatchGetItem
+              Resource: !GetAtt CommunitiesTable.Arn
+      Events:
+        ListMyCommunities:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /me/communities
+            Method: GET
+
+  GetCommunityLeaderboardFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/getCommunityLeaderboard/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:Query
+              Resource: !GetAtt CommunitiesTable.Arn
+            - Effect: Allow
+              Action: dynamodb:BatchGetItem
+              Resource: !GetAtt UsersTable.Arn
+      Events:
+        GetCommunityLeaderboard:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /communities/{communityId}/leaderboard
+            Method: GET
 
   SearchFriendsFunction:
     Type: AWS::Serverless::Function
@@ -673,6 +791,73 @@ Resources:
             Path: /feed/friends
             Method: GET
 
+  # Apple App Store Server Notifications webhook. Public endpoint (no Cognito)
+  # because Apple sends the JWT-signed payload directly, not through a user session.
+  # Verifies Apple's signed JWS transaction, deduplicates via PurchaseEventsTable,
+  # and sets hasCommunityAccess=true on the matching user.
+  AppleWebhookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/appleWebhook/
+      Handler: index.handler
+      Environment:
+        Variables:
+          APPLE_BUNDLE_ID: com.lifemaxxing.app
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:PutItem
+              Resource: !GetAtt PurchaseEventsTable.Arn
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:UpdateItem
+              Resource: !GetAtt UsersTable.Arn
+            - Effect: Allow
+              Action: dynamodb:Query
+              Resource:
+                - !GetAtt UsersTable.Arn
+                - !Sub "${UsersTable.Arn}/index/GSI1"
+      Events:
+        AppleWebhook:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /apple/webhook
+            Method: POST
+            Auth:
+              Authorizer: NONE
+
+  # Called by iOS immediately after a successful StoreKit purchase to grant
+  # access without waiting for the async Apple webhook. Protected by Cognito
+  # (user must be signed in). Verifies the signed transaction with Apple's
+  # App Store Server API, deduplicates, and sets hasCommunityAccess=true.
+  VerifyApplePurchaseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/verifyApplePurchase/
+      Handler: index.handler
+      Environment:
+        Variables:
+          APPLE_BUNDLE_ID: com.lifemaxxing.app
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:PutItem
+              Resource: !GetAtt PurchaseEventsTable.Arn
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:UpdateItem
+              Resource: !GetAtt UsersTable.Arn
+      Events:
+        VerifyApplePurchase:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /purchases/verify
+            Method: POST
+
 Outputs:
   HttpApiUrl:
     Description: Base URL for the HTTP API
@@ -697,3 +882,5 @@ Outputs:
     Value: !Ref CommunitiesTable
   GymPhotosBucketName:
     Value: !Ref GymPhotosBucket
+  PurchaseEventsTableName:
+    Value: !Ref PurchaseEventsTable

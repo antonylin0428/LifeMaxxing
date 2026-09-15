@@ -1,6 +1,6 @@
 'use strict';
 
-const { GetCommand, TransactWriteCommand } = require('@aws-sdk/lib-dynamodb');
+const { GetCommand, TransactWriteCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
 const { randomUUID } = require('node:crypto');
 const {
   getUserSub,
@@ -201,6 +201,29 @@ exports.handler = async (event) => {
     return http.serverError();
   }
 
+  // Achievement checks (non-blocking — XP was already committed).
+  const newlyUnlocked = computeNewAchievements({
+    categoryId,
+    isFirstCompletion: !categoryStats.lastCompletedDate,
+    newStreak,
+    newTotalXP,
+    existingAchievements: user.achievements || [],
+  });
+
+  if (newlyUnlocked.length > 0) {
+    try {
+      await ddb.send(new UpdateCommand({
+        TableName: TableNames.USERS,
+        Key: { PK: `USER#${userSub}`, SK: 'PROFILE' },
+        UpdateExpression: 'ADD achievements :ids',
+        ExpressionAttributeValues: { ':ids': new Set(newlyUnlocked) },
+      }));
+    } catch (err) {
+      // Achievement grant failed but XP write already committed — log and continue.
+      console.error('achievement grant failed', err);
+    }
+  }
+
   return http.ok({
     finalXPAwarded: xp.finalXPAwarded,
     newTotalXP,
@@ -210,5 +233,19 @@ exports.handler = async (event) => {
     rankChanged: newRank.key !== user.rank,
     categoryXPRemainingToday: Math.max(0, 55 - (categoryXPAlreadyToday + xp.finalXPAwarded)),
     totalXPRemainingToday: Math.max(0, 125 - (totalXPAlreadyToday + xp.finalXPAwarded)),
+    newAchievements: newlyUnlocked,
   });
 };
+
+function computeNewAchievements({ categoryId, isFirstCompletion, newStreak, newTotalXP, existingAchievements }) {
+  const has = (id) => existingAchievements.includes(id) || (existingAchievements.has && existingAchievements.has(id));
+  const earned = [];
+
+  if (isFirstCompletion && categoryId === 'FITNESS' && !has('first-workout')) earned.push('first-workout');
+  if (isFirstCompletion && categoryId === 'FOCUS'   && !has('scholar'))        earned.push('scholar');
+  if (newStreak >= 7  && !has('streak-7'))    earned.push('streak-7');
+  if (newStreak >= 30 && !has('iron-will'))   earned.push('iron-will');
+  if (newTotalXP >= 100 && !has('centurion')) earned.push('centurion');
+
+  return earned;
+}

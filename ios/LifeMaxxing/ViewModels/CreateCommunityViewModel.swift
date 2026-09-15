@@ -20,7 +20,7 @@ final class CreateCommunityViewModel {
                 description: description.isEmpty ? nil : description
             )
         } catch APIError.server(403, _) {
-            errorMessage = "Creating communities requires a premium account."
+            errorMessage = "Creating communities requires purchasing community access."
         } catch {
             errorMessage = error.localizedDescription
         }

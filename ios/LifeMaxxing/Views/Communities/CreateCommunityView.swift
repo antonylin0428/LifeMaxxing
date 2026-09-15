@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Only reachable for premium users (see ProfileView's NavigationLink) -
-/// the server re-checks isPremium independently on submit regardless.
+/// Only reachable after purchasing community access (see ProfileView's NavigationLink) -
+/// the server re-checks hasCommunityAccess independently on submit regardless.
 struct CreateCommunityView: View {
     @State private var viewModel = CreateCommunityViewModel()
 
@@ -61,7 +61,7 @@ struct CreateCommunityView: View {
         .scrollDismissesKeyboard(.interactively)
     }
 
-    // MARK: Success
+    // MARK: Success → navigate into the new community
 
     private func successView(community: Community) -> some View {
         VStack(spacing: 20) {
@@ -73,7 +73,6 @@ struct CreateCommunityView: View {
                     .font(.system(size: 40, weight: .medium))
                     .foregroundStyle(Color(hex: "2A8A28"))
             }
-
             VStack(spacing: 8) {
                 Text("Community Created!")
                     .font(.system(size: 22, weight: .bold))
@@ -81,12 +80,18 @@ struct CreateCommunityView: View {
                 Text(community.name)
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(Theme.textSecondary)
-                if let description = community.description {
-                    Text(description)
-                        .font(.system(size: 14))
-                        .foregroundStyle(Theme.textSecondary)
-                        .multilineTextAlignment(.center)
-                }
+            }
+            NavigationLink(destination: CommunityDetailView(
+                communityId: community.communityId,
+                initialName: community.name
+            )) {
+                Text("View Community")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 12)
+                    .background(Color(hex: "7A5CF5"))
+                    .clipShape(Capsule())
             }
         }
         .padding(40)

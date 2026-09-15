@@ -21,6 +21,6 @@ exports.handler = async (event) => {
   if (!Item) return http.notFound('User profile not found');
 
   const { PK, SK, ...profile } = Item;
-  // Default for profiles created before the mock premium flag existed.
-  return http.ok({ ...profile, isPremium: profile.isPremium ?? false });
+  // Default for profiles created before hasCommunityAccess was introduced.
+  return http.ok({ ...profile, hasCommunityAccess: profile.hasCommunityAccess ?? false });
 };

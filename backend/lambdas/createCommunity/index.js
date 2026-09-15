@@ -1,10 +1,5 @@
 'use strict';
 
-// Community creation is premium-gated. The frontend hides the Create
-// Community screen from non-premium users, but that's a UX nicety only -
-// this check is the actual enforcement, same as every other mutation in
-// this app: never trust the client, the server decides.
-
 const { randomUUID } = require('crypto');
 const { GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 const { getUserSub, http, dynamo } = require('lifemaxxing-shared');
@@ -28,8 +23,8 @@ exports.handler = async (event) => {
   }));
   if (!user) return http.notFound('User profile not found');
 
-  if (user.isPremium !== true) {
-    return http.forbidden('Creating communities requires a premium account');
+  if (user.hasCommunityAccess !== true) {
+    return http.forbidden('Creating communities requires purchasing community access');
   }
 
   let body;
@@ -50,7 +45,7 @@ exports.handler = async (event) => {
 
   const communityId = randomUUID();
   const nowIso = new Date().toISOString();
-  const community = {
+  const communityProfile = {
     PK: `COMMUNITY#${communityId}`,
     SK: 'PROFILE',
     communityId,
@@ -59,14 +54,30 @@ exports.handler = async (event) => {
     createdBy: userSub,
     createdByUsername: user.username,
     createdAt: nowIso,
+    memberCount: 1,
   };
 
+  // Write community profile (conditional to prevent collision on UUID reuse)
   await ddb.send(new PutCommand({
     TableName: TableNames.COMMUNITIES,
-    Item: community,
+    Item: communityProfile,
     ConditionExpression: 'attribute_not_exists(PK)',
   }));
 
-  const { PK, SK, ...response } = community;
+  // Add creator as first member (GSI1 enables listMyCommunities queries)
+  await ddb.send(new PutCommand({
+    TableName: TableNames.COMMUNITIES,
+    Item: {
+      PK: `COMMUNITY#${communityId}`,
+      SK: `MEMBER#${userSub}`,
+      GSI1PK: `USER#${userSub}`,
+      GSI1SK: `COMMUNITY#${communityId}`,
+      userSub,
+      communityId,
+      joinedAt: nowIso,
+    },
+  }));
+
+  const { PK, SK, ...response } = communityProfile;
   return http.ok(response);
 };

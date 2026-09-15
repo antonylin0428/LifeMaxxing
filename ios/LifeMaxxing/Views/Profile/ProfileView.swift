@@ -143,37 +143,14 @@ struct ProfileView: View {
                     .padding(.horizontal, 16)
 
                 NavigationLink {
-                    if user.isPremium { CreateCommunityView() } else { PremiumUpsellView() }
-                } label: {
-                    SettingsRow(icon: "person.3.fill", label: "Create Community")
-                }
-
-                #if DEBUG
-                Divider()
-                    .padding(.horizontal, 16)
-
-                HStack(spacing: 14) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(Theme.surfaceSecondary)
-                            .frame(width: 30, height: 30)
-                        Image(systemName: "wrench.fill")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(Theme.textPrimary)
+                    if user.hasCommunityAccess {
+                        MyCommunityListView()
+                    } else {
+                        CommunityPaywallView()
                     }
-                    Text("Premium (mock)")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(Theme.textPrimary)
-                    Spacer()
-                    Toggle("", isOn: Binding(
-                        get: { user.isPremium },
-                        set: { v in Task { await viewModel.setMockPremium(v) } }
-                    ))
-                    .labelsHidden()
+                } label: {
+                    SettingsRow(icon: "person.3.fill", label: "Communities")
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 13)
-                #endif
             }
             .background(Theme.surface)
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))

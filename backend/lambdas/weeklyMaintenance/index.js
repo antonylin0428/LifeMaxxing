@@ -9,7 +9,8 @@
  */
 
 const { ScanCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
-const { ddb, TableNames } = require('lifemaxxing-shared');
+const { dynamo } = require('lifemaxxing-shared');
+const { ddb, TableNames } = dynamo;
 
 exports.handler = async function () {
   let lastKey;

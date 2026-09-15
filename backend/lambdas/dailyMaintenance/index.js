@@ -16,9 +16,8 @@
  */
 
 const { QueryCommand, ScanCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
-const { ddb, TableNames } = require('lifemaxxing-shared');
-const { computeRank, isEliteWeek } = require('lifemaxxing-shared');
-const { todayString } = require('lifemaxxing-shared');
+const { computeRank, isEliteWeek, todayString, dynamo } = require('lifemaxxing-shared');
+const { ddb, TableNames } = dynamo;
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 

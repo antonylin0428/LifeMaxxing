@@ -9,8 +9,7 @@ final class DashboardViewModel {
     var errorMessage: String?
     var isLoading = false
 
-    /// Achievements are local mock data only - see Achievement.swift.
-    let achievements = Achievement.mockForPrototype
+    var achievements: [Achievement] { Achievement.fromServerGrants(user?.achievements) }
 
     /// The dashboard shows one streak badge, but streaks are tracked
     /// per-category server-side. Surface the best currently-active streak.

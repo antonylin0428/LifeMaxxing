@@ -23,14 +23,15 @@ final class ProfileViewModel {
         }
     }
 
-    /// TESTING-ONLY mock premium toggle - see ProfileAPI.setMockPremium.
-    func setMockPremium(_ isPremium: Bool) async {
+    #if DEBUG
+    func setMockCommunityAccess(_ hasCommunityAccess: Bool) async {
         errorMessage = nil
         do {
-            try await ProfileAPI.shared.setMockPremium(isPremium)
+            try await ProfileAPI.shared.setMockCommunityAccess(hasCommunityAccess)
             await load()
         } catch {
             errorMessage = error.localizedDescription
         }
     }
+    #endif
 }

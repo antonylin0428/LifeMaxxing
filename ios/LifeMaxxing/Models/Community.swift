@@ -1,8 +1,5 @@
 import Foundation
 
-/// Mirrors the POST /communities response. Creation is premium-gated
-/// server-side; there's no list/browse/join endpoint yet - that's separate
-/// scope from the premium gate this model exists to support.
 struct Community: Codable, Identifiable {
     var id: String { communityId }
     let communityId: String
@@ -11,4 +8,24 @@ struct Community: Codable, Identifiable {
     let createdBy: String
     let createdByUsername: String
     let createdAt: String
+    let memberCount: Int?
+}
+
+struct CommunityLeaderboardEntry: Codable, Identifiable {
+    var id: String { sub }
+    let sub: String
+    let username: String
+    let totalXP: Int
+    let rank: Rank?
+    let isMe: Bool
+}
+
+struct CommunityLeaderboardResponse: Codable {
+    let communityId: String
+    let name: String
+    let leaderboard: [CommunityLeaderboardEntry]
+}
+
+struct CommunitiesListResponse: Codable {
+    let communities: [Community]
 }
