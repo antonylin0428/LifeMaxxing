@@ -24,6 +24,7 @@ exports.handler = async (event) => {
 
   const categories = (Items || []).map(({ PK, SK, ...rest }) => ({
     categoryId: SK.replace('CATEGORY#', ''),
+    freezesAvailable: 1,  // default for items created before this field was added
     ...rest,
   }));
 
