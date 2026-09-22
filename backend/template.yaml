@@ -20,6 +20,7 @@ Globals:
         COMMUNITIES_TABLE: !Ref CommunitiesTable
         PHOTOS_BUCKET: !Ref GymPhotosBucket
         PURCHASE_EVENTS_TABLE: !Ref PurchaseEventsTable
+        COMMUNITY_FEED_TABLE: !Ref CommunityFeedTable
 
 Resources:
 
@@ -260,6 +261,27 @@ Resources:
       KeySchema:
         - AttributeName: PK
           KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  # CommunityFeed: PK=COMMUNITY#<id>, SK=DATE#<date>#USER#<sub>
+  # One post per user per day per community. PutItem replaces on retake.
+  # TTL auto-purges posts after 30 days.
+  CommunityFeedTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
       TimeToLiveSpecification:
         AttributeName: ttl
         Enabled: true
@@ -584,6 +606,75 @@ Resources:
           Properties:
             ApiId: !Ref HttpApi
             Path: /communities/{communityId}/leaderboard
+            Method: GET
+
+  GetCommunityFeedUploadUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/getCommunityFeedUploadUrl/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:GetItem
+              Resource: !GetAtt CommunitiesTable.Arn
+            - Effect: Allow
+              Action: s3:PutObject
+              Resource: !Sub "${GymPhotosBucket.Arn}/community-feed/*"
+      Events:
+        GetCommunityFeedUploadUrl:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /communities/{communityId}/feed/upload-url
+            Method: GET
+
+  PostCommunityPhotoFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/postCommunityPhoto/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:GetItem
+              Resource: !GetAtt CommunitiesTable.Arn
+            - Effect: Allow
+              Action: dynamodb:PutItem
+              Resource: !GetAtt CommunityFeedTable.Arn
+      Events:
+        PostCommunityPhoto:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /communities/{communityId}/feed
+            Method: POST
+
+  GetCommunityFeedFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/getCommunityFeed/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:GetItem
+              Resource: !GetAtt CommunitiesTable.Arn
+            - Effect: Allow
+              Action: dynamodb:Query
+              Resource: !GetAtt CommunityFeedTable.Arn
+            - Effect: Allow
+              Action: dynamodb:BatchGetItem
+              Resource: !GetAtt UsersTable.Arn
+            - Effect: Allow
+              Action: s3:GetObject
+              Resource: !Sub "${GymPhotosBucket.Arn}/community-feed/*"
+      Events:
+        GetCommunityFeed:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /communities/{communityId}/feed
             Method: GET
 
   SearchFriendsFunction:
@@ -930,3 +1021,5 @@ Outputs:
     Value: !Ref GymPhotosBucket
   PurchaseEventsTableName:
     Value: !Ref PurchaseEventsTable
+  CommunityFeedTableName:
+    Value: !Ref CommunityFeedTable
