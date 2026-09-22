@@ -882,6 +882,32 @@ Resources:
             Path: /leaderboard/friends
             Method: GET
 
+  GetUserProfileFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/getUserProfile/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+              Resource: !GetAtt UsersTable.Arn
+            - Effect: Allow
+              Action:
+                - dynamodb:Query
+              Resource: !GetAtt DailyLogsTable.Arn
+            - Effect: Allow
+              Action: s3:GetObject
+              Resource: !Sub "${GymPhotosBucket.Arn}/*"
+      Events:
+        GetUserProfile:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /users/{userSub}
+            Method: GET
+
   GetUploadUrlFunction:
     Type: AWS::Serverless::Function
     Properties:

@@ -267,7 +267,7 @@ struct CommunityDetailView: View {
     }
 
     private func leaderboardRow(entry: CommunityLeaderboardEntry, rank: Int) -> some View {
-        HStack(spacing: 14) {
+        let rowContent = HStack(spacing: 14) {
             Text("\(rank)")
                 .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(rank <= 3 ? Color(hex: "F5A623") : Theme.textSecondary)
@@ -302,5 +302,16 @@ struct CommunityDetailView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(entry.isMe ? Theme.accentGreen.opacity(0.05) : Color.clear)
+
+        if entry.isMe {
+            return AnyView(rowContent)
+        } else {
+            return AnyView(
+                NavigationLink(destination: UserProfileView(sub: entry.sub, initialUsername: entry.username)) {
+                    rowContent
+                }
+                .buttonStyle(.plain)
+            )
+        }
     }
 }

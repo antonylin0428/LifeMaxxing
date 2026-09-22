@@ -63,6 +63,10 @@ struct ProfileAPI {
         }
     }
 
+    func getUserProfile(sub: String) async throws -> PublicUserProfile {
+        try await APIClient.shared.request(path: "/users/\(sub)")
+    }
+
     #if DEBUG
     func setMockCommunityAccess(_ hasCommunityAccess: Bool) async throws {
         let body = SetMockCommunityAccessRequest(hasCommunityAccess: hasCommunityAccess)

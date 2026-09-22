@@ -202,8 +202,7 @@ struct LeaderboardView: View {
     }
 
     private func leaderboardRow(rank: Int, entry: LeaderboardEntry) -> some View {
-        HStack(spacing: 14) {
-            // Rank badge
+        let rowContent = HStack(spacing: 14) {
             ZStack {
                 Circle()
                     .fill(rankBadgeColor(rank: rank))
@@ -213,7 +212,6 @@ struct LeaderboardView: View {
                     .foregroundStyle(rank <= 3 ? .white : Theme.textSecondary)
             }
 
-            // Avatar
             Circle()
                 .fill(Color(hex: "E8E8E4"))
                 .frame(width: 40, height: 40)
@@ -223,7 +221,6 @@ struct LeaderboardView: View {
                         .foregroundStyle(Theme.ink)
                 )
 
-            // Name + rank
             VStack(alignment: .leading, spacing: 3) {
                 Text(entry.username)
                     .font(.system(size: 15, weight: entry.isMe ? .bold : .medium))
@@ -245,15 +242,24 @@ struct LeaderboardView: View {
             }
         }
         .padding(14)
-        .background(entry.isMe
-                    ? Theme.highlight.opacity(0.15)
-                    : Theme.surface)
+        .background(entry.isMe ? Theme.highlight.opacity(0.15) : Theme.surface)
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .strokeBorder(entry.isMe ? Theme.highlight : .clear, lineWidth: 1.5)
         )
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 3)
+
+        if entry.isMe {
+            return AnyView(rowContent)
+        } else {
+            return AnyView(
+                NavigationLink(destination: UserProfileView(sub: entry.sub, initialUsername: entry.username)) {
+                    rowContent
+                }
+                .buttonStyle(.plain)
+            )
+        }
     }
 
     private func rankBadgeColor(rank: Int) -> Color {

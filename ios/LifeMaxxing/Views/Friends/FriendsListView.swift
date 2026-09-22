@@ -98,26 +98,36 @@ struct FriendsListView: View {
             } else {
                 VStack(spacing: 8) {
                     ForEach(viewModel.friends) { friend in
-                        HStack(spacing: 14) {
-                            Circle()
-                                .fill(Color(hex: "C5B5F5").opacity(0.5))
-                                .frame(width: 44, height: 44)
-                                .overlay(
-                                    Text(String(friend.friendUsername.prefix(1)).uppercased())
-                                        .font(.system(size: 17, weight: .bold))
-                                        .foregroundStyle(Theme.ink)
-                                )
+                        NavigationLink(destination: UserProfileView(
+                            sub: friend.friendSub,
+                            initialUsername: friend.friendUsername
+                        )) {
+                            HStack(spacing: 14) {
+                                Circle()
+                                    .fill(Color(hex: "C5B5F5").opacity(0.5))
+                                    .frame(width: 44, height: 44)
+                                    .overlay(
+                                        Text(String(friend.friendUsername.prefix(1)).uppercased())
+                                            .font(.system(size: 17, weight: .bold))
+                                            .foregroundStyle(Theme.ink)
+                                    )
 
-                            Text(friend.friendUsername)
-                                .font(.system(size: 15, weight: .medium))
-                                .foregroundStyle(Theme.textPrimary)
+                                Text(friend.friendUsername)
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundStyle(Theme.textPrimary)
 
-                            Spacer()
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(Theme.textSecondary.opacity(0.5))
+                            }
+                            .padding(14)
+                            .background(Theme.surface)
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 3)
                         }
-                        .padding(14)
-                        .background(Theme.surface)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 3)
+                        .buttonStyle(.plain)
                     }
                 }
             }

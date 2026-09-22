@@ -4,6 +4,8 @@ struct ProfileView: View {
     @Environment(AuthViewModel.self) private var authViewModel
     @State private var viewModel = ProfileViewModel()
 
+    @State private var selectedAchievement: Achievement?
+
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
@@ -13,6 +15,7 @@ struct ProfileView: View {
                     if let user = viewModel.user {
                         profileHeader(user: user)
                         statsRow(user: user)
+                        achievementsSection(user: user)
                         streaksSection
                         settingsSection(user: user)
                     }
@@ -31,6 +34,9 @@ struct ProfileView: View {
         }
         .navigationTitle("Profile")
         .task { await viewModel.load() }
+        .sheet(item: $selectedAchievement) { a in
+            AchievementDetailSheet(achievement: a)
+        }
     }
 
     // MARK: Header
@@ -87,6 +93,19 @@ struct ProfileView: View {
             Text(String(user.username.prefix(1)).uppercased())
                 .font(.system(size: 32, weight: .bold))
                 .foregroundStyle(Theme.textPrimary)
+        }
+    }
+
+    // MARK: Achievements
+
+    private func achievementsSection(user: User) -> some View {
+        let achievements = Achievement.fromServerGrants(user.achievements)
+        return VStack(alignment: .leading, spacing: 12) {
+            SectionHeader(title: "Achievements")
+            AchievementsGrid(achievements: achievements) { a in
+                selectedAchievement = a
+            }
+            .cardStyle()
         }
     }
 
