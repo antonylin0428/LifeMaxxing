@@ -32,15 +32,14 @@ exports.handler = async (event) => {
   }));
 
   const friendSubs = (friendshipsRes.Items || []).map(item => item.SK.replace('FRIEND#', ''));
-  if (friendSubs.length === 0) {
-    return http.ok([]);
-  }
+  // Always include the current user's own posts in the feed.
+  const allSubs = [...new Set([userSub, ...friendSubs])];
 
-  // 2. Query DailyLogs for each friend's FITNESS entries in the last 7 days
+  // 2. Query DailyLogs for each person's FITNESS entries in the last 7 days
   const rangeStart = daysAgo(7);
   const today = todayString();
 
-  const logQueries = friendSubs.map(sub =>
+  const logQueries = allSubs.map(sub =>
     ddb.send(new QueryCommand({
       TableName: TableNames.DAILY_LOGS,
       KeyConditionExpression: 'PK = :pk AND SK BETWEEN :start AND :end',
@@ -62,20 +61,38 @@ exports.handler = async (event) => {
     return http.ok([]);
   }
 
-  // 3. BatchGet usernames for friends who have posts
+  // 3. BatchGet usernames + FITNESS streak for everyone who has posts
   const uniqueSubs = [...new Set(posts.map(p => p.sub))];
-  const batchKeys = uniqueSubs.map(sub => ({ PK: `USER#${sub}`, SK: 'PROFILE' }));
+  const profileKeys = uniqueSubs.map(sub => ({ PK: `USER#${sub}`, SK: 'PROFILE' }));
+  const streakKeys = uniqueSubs.map(sub => ({ PK: `USER#${sub}`, SK: 'CATEGORY#FITNESS' }));
 
-  const batchRes = await ddb.send(new BatchGetCommand({
-    RequestItems: {
-      [TableNames.USERS]: { Keys: batchKeys, ProjectionExpression: 'PK, username, #r, currentStreak',
-        ExpressionAttributeNames: { '#r': 'rank' } },
-    },
-  }));
+  const [profileRes, streakRes] = await Promise.all([
+    ddb.send(new BatchGetCommand({
+      RequestItems: {
+        [TableNames.USERS]: {
+          Keys: profileKeys,
+          ProjectionExpression: 'PK, username, #r',
+          ExpressionAttributeNames: { '#r': 'rank' },
+        },
+      },
+    })),
+    ddb.send(new BatchGetCommand({
+      RequestItems: {
+        [TableNames.CATEGORY_STATS]: {
+          Keys: streakKeys,
+          ProjectionExpression: 'PK, currentStreak',
+        },
+      },
+    })),
+  ]);
 
   const userMap = {};
-  for (const u of (batchRes.Responses?.[TableNames.USERS] || [])) {
+  for (const u of (profileRes.Responses?.[TableNames.USERS] || [])) {
     userMap[u.PK] = u;
+  }
+  const streakMap = {};
+  for (const s of (streakRes.Responses?.[TableNames.CATEGORY_STATS] || [])) {
+    streakMap[s.PK] = s.currentStreak || 0;
   }
 
   // 4. Generate pre-signed GET URLs (1 hour) and build response
@@ -87,7 +104,7 @@ exports.handler = async (event) => {
       s3Key: item.photoS3Key,
       username: u.username || 'Unknown',
       rank: u.rank || '',
-      currentStreak: u.currentStreak || 0,
+      currentStreak: streakMap[`USER#${sub}`] || 0,
       xpAwarded: item.xpAwarded,
       completedAt: item.completedAtServerTime,
       photoUrl,

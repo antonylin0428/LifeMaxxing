@@ -1,9 +1,13 @@
 'use strict';
 
+const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { GetCommand } = require('@aws-sdk/lib-dynamodb');
 const { getUserSub, http, dynamo } = require('lifemaxxing-shared');
 
 const { ddb, TableNames } = dynamo;
+const s3 = new S3Client({});
+const BUCKET = process.env.PHOTOS_BUCKET;
 
 exports.handler = async (event) => {
   let userSub;
@@ -20,7 +24,18 @@ exports.handler = async (event) => {
 
   if (!Item) return http.notFound('User profile not found');
 
-  const { PK, SK, ...profile } = Item;
-  // Default for profiles created before hasCommunityAccess was introduced.
-  return http.ok({ ...profile, hasCommunityAccess: profile.hasCommunityAccess ?? false });
+  const { PK, SK, achievements: rawAchievements, avatarKey, ...profile } = Item;
+
+  let avatarUrl;
+  if (avatarKey) {
+    const cmd = new GetObjectCommand({ Bucket: BUCKET, Key: avatarKey });
+    avatarUrl = await getSignedUrl(s3, cmd, { expiresIn: 3600 });
+  }
+
+  return http.ok({
+    ...profile,
+    achievements: rawAchievements ? [...rawAchievements] : [],
+    hasCommunityAccess: profile.hasCommunityAccess ?? false,
+    ...(avatarUrl !== undefined ? { avatarUrl } : {}),
+  });
 };

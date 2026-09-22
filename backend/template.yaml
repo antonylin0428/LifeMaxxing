@@ -370,12 +370,56 @@ Resources:
             - Effect: Allow
               Action: dynamodb:GetItem
               Resource: !GetAtt UsersTable.Arn
+            - Effect: Allow
+              Action: s3:GetObject
+              Resource: !Sub "${GymPhotosBucket.Arn}/avatars/*"
       Events:
         GetMe:
           Type: HttpApi
           Properties:
             ApiId: !Ref HttpApi
             Path: /me
+            Method: GET
+
+  UpdateProfileFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/updateProfile/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:UpdateItem
+              Resource: !GetAtt UsersTable.Arn
+            - Effect: Allow
+              Action: dynamodb:Query
+              Resource:
+                - !GetAtt UsersTable.Arn
+                - !Sub "${UsersTable.Arn}/index/GSI1"
+      Events:
+        UpdateProfile:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /me/profile
+            Method: PUT
+
+  GetAvatarUploadUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/getAvatarUploadUrl/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: s3:PutObject
+              Resource: !Sub "${GymPhotosBucket.Arn}/avatars/*"
+      Events:
+        GetAvatarUploadUrl:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /me/avatar-upload-url
             Method: GET
 
   GetCategoriesFunction:
@@ -779,7 +823,9 @@ Resources:
                 - !GetAtt DailyLogsTable.Arn
             - Effect: Allow
               Action: dynamodb:BatchGetItem
-              Resource: !GetAtt UsersTable.Arn
+              Resource:
+                - !GetAtt UsersTable.Arn
+                - !GetAtt CategoryStatsTable.Arn
             - Effect: Allow
               Action: s3:GetObject
               Resource: !Sub "${GymPhotosBucket.Arn}/gym-photos/*"
