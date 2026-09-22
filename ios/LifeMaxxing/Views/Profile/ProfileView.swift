@@ -37,14 +37,7 @@ struct ProfileView: View {
 
     private func profileHeader(user: User) -> some View {
         VStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(Color(hex: "E8E8E4"))
-                    .frame(width: 80, height: 80)
-                Text(String(user.username.prefix(1)).uppercased())
-                    .font(.system(size: 32, weight: .bold))
-                    .foregroundStyle(Theme.textPrimary)
-            }
+            avatarView(user: user)
 
             Text(user.username)
                 .font(.system(size: 20, weight: .bold))
@@ -65,6 +58,36 @@ struct ProfileView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 20)
         .cardStyle()
+    }
+
+    @ViewBuilder
+    private func avatarView(user: User) -> some View {
+        if let urlString = user.avatarUrl, let url = URL(string: urlString) {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let img):
+                    img.resizable()
+                        .scaledToFill()
+                        .frame(width: 80, height: 80)
+                        .clipShape(Circle())
+                default:
+                    initialsCircle(user: user)
+                }
+            }
+        } else {
+            initialsCircle(user: user)
+        }
+    }
+
+    private func initialsCircle(user: User) -> some View {
+        ZStack {
+            Circle()
+                .fill(Color(hex: "E8E8E4"))
+                .frame(width: 80, height: 80)
+            Text(String(user.username.prefix(1)).uppercased())
+                .font(.system(size: 32, weight: .bold))
+                .foregroundStyle(Theme.textPrimary)
+        }
     }
 
     // MARK: Stats
@@ -133,6 +156,16 @@ struct ProfileView: View {
             SectionHeader(title: "Settings")
 
             VStack(spacing: 0) {
+                NavigationLink {
+                    ProfileSettingsView(user: user)
+                        .onDisappear { Task { await viewModel.load() } }
+                } label: {
+                    SettingsRow(icon: "person.crop.circle", label: "Edit Profile")
+                }
+
+                Divider()
+                    .padding(.horizontal, 16)
+
                 NavigationLink {
                     CategorySetupView()
                 } label: {

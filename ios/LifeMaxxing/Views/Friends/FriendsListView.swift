@@ -24,12 +24,6 @@ struct FriendsListView: View {
         }
         .navigationTitle("Friends")
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                NavigationLink { LeaderboardView() } label: {
-                    Image(systemName: "list.number")
-                        .font(.system(size: 16, weight: .medium))
-                }
-            }
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink { AddFriendView() } label: {
                     Image(systemName: "person.badge.plus")

@@ -11,7 +11,7 @@ struct MainTabView: View {
             NavigationStack { QuestsView() }
                 .toolbar(.hidden, for: .tabBar)
                 .tag(1)
-            NavigationStack { FriendsListView() }
+            NavigationStack { LeaderboardView() }
                 .toolbar(.hidden, for: .tabBar)
                 .tag(2)
             NavigationStack { ProfileView() }
@@ -30,7 +30,7 @@ private struct LMTabBar: View {
     private let items: [String] = [
         "house.fill",
         "target",
-        "person.2.fill",
+        "list.number",
         "person.crop.circle.fill",
     ]
 

@@ -14,7 +14,24 @@ final class QuestsViewModel {
         errorMessage = nil
         defer { isLoading = false }
         do {
-            categories = try await ProfileAPI.shared.getCategories()
+            let serverStats = try await ProfileAPI.shared.getCategories()
+            let serverMap = Dictionary(uniqueKeysWithValues: serverStats.map { ($0.categoryId, $0) })
+            // Show every category regardless of whether the server has a stats row yet.
+            // Categories explicitly disabled (enabled == false) are hidden.
+            categories = CategoryId.allCases.compactMap { catId in
+                if let stat = serverMap[catId] {
+                    return stat.enabled == false ? nil : stat
+                }
+                return CategoryStat(
+                    categoryId: catId,
+                    currentStreak: 0,
+                    longestStreak: 0,
+                    lastCompletedDate: nil,
+                    multiplierCache: nil,
+                    freezesAvailable: 1,
+                    enabled: nil
+                )
+            }
         } catch {
             errorMessage = error.localizedDescription
         }

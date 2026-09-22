@@ -47,6 +47,6 @@ struct CategoryStat: Codable, Identifiable {
     let longestStreak: Int
     let lastCompletedDate: String?
     let multiplierCache: Double?
-    let freezesAvailable: Int
+    let freezesAvailable: Int?
     let enabled: Bool?
 }

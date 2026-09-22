@@ -3,17 +3,37 @@ import SwiftUI
 struct QuestsView: View {
     @State private var viewModel = QuestsViewModel()
 
+    private var coreCategories: [CategoryStat] {
+        viewModel.categories.filter { !$0.categoryId.isOptional }
+    }
+
+    private var optionalCategories: [CategoryStat] {
+        viewModel.categories.filter { $0.categoryId.isOptional }
+    }
+
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
 
             ScrollView {
-                VStack(spacing: 12) {
-                    ForEach(viewModel.categories.filter { $0.enabled != false }) { category in
-                        let done = viewModel.isCompletedToday(category)
-                        QuestCard(category: category, isDone: done) {
-                            Task { await viewModel.complete(category.categoryId) }
-                        }
+                VStack(spacing: 24) {
+                    // Personal & Community section
+                    questSection(
+                        title: "Personal & Community",
+                        subtitle: "XP from these counts toward community leaderboards",
+                        icon: "trophy.fill",
+                        iconColor: Color(hex: "FFD700"),
+                        categories: coreCategories
+                    )
+
+                    if !optionalCategories.isEmpty {
+                        questSection(
+                            title: "Personal Only",
+                            subtitle: "Optional — counts toward your personal XP only",
+                            icon: "person.fill",
+                            iconColor: Theme.textSecondary,
+                            categories: optionalCategories
+                        )
                     }
                 }
                 .padding(.horizontal, 20)
@@ -38,6 +58,40 @@ struct QuestsView: View {
                 ErrorBanner(message: error)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 8)
+            }
+        }
+    }
+
+    private func questSection(
+        title: String,
+        subtitle: String,
+        icon: String,
+        iconColor: Color,
+        categories: [CategoryStat]
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(iconColor)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(Theme.textPrimary)
+                    Text(subtitle)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+            }
+            .padding(.bottom, 2)
+
+            VStack(spacing: 8) {
+                ForEach(categories) { category in
+                    let done = viewModel.isCompletedToday(category)
+                    QuestCard(category: category, isDone: done) {
+                        Task { await viewModel.complete(category.categoryId) }
+                    }
+                }
             }
         }
     }

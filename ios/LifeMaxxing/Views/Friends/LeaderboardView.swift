@@ -38,6 +38,14 @@ struct LeaderboardView: View {
             }
         }
         .navigationTitle("Leaderboard")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink { FriendsListView() } label: {
+                    Image(systemName: "person.2.fill")
+                        .font(.system(size: 16, weight: .medium))
+                }
+            }
+        }
         .task {
             await viewModel.load()
             await loadFeed()

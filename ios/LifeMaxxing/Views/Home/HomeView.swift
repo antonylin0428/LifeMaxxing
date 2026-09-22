@@ -36,16 +36,36 @@ struct HomeView: View {
 
     // MARK: - Header
 
+    private var headerInitialsCircle: some View {
+        ZStack {
+            Circle()
+                .fill(Color(hex: "E2E0DB"))
+                .frame(width: 46, height: 46)
+            Text(String((viewModel.user?.username ?? "?").prefix(1)).uppercased())
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(Theme.ink)
+        }
+    }
+
     private var header: some View {
         HStack(alignment: .center) {
             // Avatar
-            ZStack {
-                Circle()
-                    .fill(Color(hex: "E2E0DB"))
-                    .frame(width: 46, height: 46)
-                Text(String((viewModel.user?.username ?? "?").prefix(1)).uppercased())
-                    .font(.system(size: 18, weight: .black))
-                    .foregroundStyle(Theme.ink)
+            Group {
+                if let urlString = viewModel.user?.avatarUrl, let url = URL(string: urlString) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let img):
+                            img.resizable()
+                                .scaledToFill()
+                                .frame(width: 46, height: 46)
+                                .clipShape(Circle())
+                        default:
+                            headerInitialsCircle
+                        }
+                    }
+                } else {
+                    headerInitialsCircle
+                }
             }
 
             Spacer()

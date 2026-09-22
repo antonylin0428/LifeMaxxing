@@ -14,4 +14,6 @@ struct User: Codable, Identifiable {
     let hasCommunityAccess: Bool
     /// Set of achievement IDs granted server-side (e.g. "first-workout", "streak-7").
     let achievements: [String]?
+    /// Presigned S3 URL for the user's avatar, present only when they've uploaded one.
+    let avatarUrl: String?
 }

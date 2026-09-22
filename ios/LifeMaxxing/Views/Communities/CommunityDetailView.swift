@@ -1,10 +1,12 @@
 import SwiftUI
+import PhotosUI
 
 struct CommunityDetailView: View {
     let communityId: String
     var initialName: String? = nil
 
     @State private var viewModel: CommunityViewModel
+    @State private var selectedPhotoItem: PhotosPickerItem?
 
     init(communityId: String, initialName: String? = nil) {
         self.communityId = communityId
@@ -26,6 +28,13 @@ struct CommunityDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task { await viewModel.load() }
         .refreshable { await viewModel.load() }
+        .onChange(of: selectedPhotoItem) { _, item in
+            Task {
+                if let data = try? await item?.loadTransferable(type: Data.self) {
+                    await viewModel.uploadPhoto(data)
+                }
+            }
+        }
         .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") { viewModel.errorMessage = nil }
         } message: {
@@ -36,36 +45,16 @@ struct CommunityDetailView: View {
     private var content: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                // Header card
                 if let community = viewModel.community {
                     communityHeader(community: community)
                 }
 
-                // Join button (shown if not a member)
                 if !viewModel.isMember {
-                    Button {
-                        Task { await viewModel.join() }
-                    } label: {
-                        if viewModel.isJoining {
-                            ProgressView().tint(.white)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 52)
-                                .background(Theme.accentGreen)
-                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        } else {
-                            Text("Join Community")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 52)
-                                .background(Theme.accentGreen)
-                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        }
-                    }
-                    .disabled(viewModel.isJoining)
+                    joinButton
+                } else {
+                    feedSection
                 }
 
-                // Leaderboard
                 if !viewModel.leaderboard.isEmpty {
                     leaderboardSection
                 }
@@ -73,6 +62,146 @@ struct CommunityDetailView: View {
             .padding(20)
         }
     }
+
+    // MARK: - Feed
+
+    private var feedSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Today's Feed")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Theme.textPrimary)
+                Spacer()
+                photoPickerButton
+            }
+
+            if viewModel.isUploadingPhoto {
+                HStack(spacing: 10) {
+                    ProgressView()
+                    Text("Posting…")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+            }
+
+            if let err = viewModel.uploadError {
+                Text(err)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color(hex: "FF4444"))
+            }
+
+            if viewModel.feedPosts.isEmpty && !viewModel.isUploadingPhoto {
+                emptyFeedPlaceholder
+            } else {
+                feedGrid
+            }
+        }
+    }
+
+    private var photoPickerButton: some View {
+        PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+            HStack(spacing: 6) {
+                Image(systemName: viewModel.myPost == nil ? "camera.fill" : "arrow.counterclockwise")
+                    .font(.system(size: 12, weight: .semibold))
+                Text(viewModel.myPost == nil ? "Post Photo" : "Retake")
+                    .font(.system(size: 13, weight: .semibold))
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 7)
+            .background(Theme.ink)
+            .clipShape(Capsule())
+        }
+        .disabled(viewModel.isUploadingPhoto)
+    }
+
+    private var emptyFeedPlaceholder: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "photo.on.rectangle.angled")
+                .font(.system(size: 32))
+                .foregroundStyle(Theme.textSecondary.opacity(0.4))
+            Text("No photos yet today")
+                .font(.system(size: 14))
+                .foregroundStyle(Theme.textSecondary)
+            Text("Be the first to post!")
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.textSecondary.opacity(0.7))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 32)
+        .background(Theme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private var feedGrid: some View {
+        let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
+        return LazyVGrid(columns: columns, spacing: 10) {
+            ForEach(viewModel.feedPosts) { post in
+                feedCell(post: post)
+            }
+        }
+    }
+
+    private func feedCell(post: CommunityFeedPost) -> some View {
+        VStack(spacing: 6) {
+            AsyncImage(url: URL(string: post.photoUrl)) { phase in
+                switch phase {
+                case .success(let img):
+                    img.resizable()
+                        .scaledToFill()
+                        .frame(width: 100, height: 100)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .strokeBorder(post.isMe ? Theme.accentGreen : Color.clear, lineWidth: 2)
+                        )
+                case .failure:
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Theme.surfaceSecondary)
+                        .frame(width: 100, height: 100)
+                        .overlay(Image(systemName: "photo").foregroundStyle(Theme.textSecondary))
+                default:
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Theme.surfaceSecondary)
+                        .frame(width: 100, height: 100)
+                        .overlay(ProgressView())
+                }
+            }
+            .frame(width: 100, height: 100)
+
+            Text(post.isMe ? "you" : post.username)
+                .font(.system(size: 11, weight: post.isMe ? .bold : .regular))
+                .foregroundStyle(post.isMe ? Theme.accentGreen : Theme.textSecondary)
+                .lineLimit(1)
+        }
+    }
+
+    // MARK: - Join
+
+    private var joinButton: some View {
+        Button {
+            Task { await viewModel.join() }
+        } label: {
+            Group {
+                if viewModel.isJoining {
+                    ProgressView().tint(.white)
+                } else {
+                    Text("Join Community")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+            .background(Theme.accentGreen)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .disabled(viewModel.isJoining)
+    }
+
+    // MARK: - Community Header
 
     private func communityHeader(community: Community) -> some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -115,6 +244,8 @@ struct CommunityDetailView: View {
         .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 3)
     }
 
+    // MARK: - Leaderboard
+
     private var leaderboardSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Leaderboard")
@@ -137,7 +268,6 @@ struct CommunityDetailView: View {
 
     private func leaderboardRow(entry: CommunityLeaderboardEntry, rank: Int) -> some View {
         HStack(spacing: 14) {
-            // Rank number
             Text("\(rank)")
                 .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(rank <= 3 ? Color(hex: "F5A623") : Theme.textSecondary)
