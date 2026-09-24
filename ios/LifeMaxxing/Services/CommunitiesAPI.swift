@@ -50,6 +50,45 @@ struct CommunitiesAPI {
             body: PostBody(photoS3Key: s3Key))
     }
 
+    // MARK: - Community Goals
+
+    func getCommunityGoals(id: String) async throws -> [CommunityGoal] {
+        let response: CommunityGoalsResponse = try await APIClient.shared.request(
+            path: "/communities/\(id)/goals", method: .get)
+        return response.goals
+    }
+
+    func updateCommunityGoals(id: String, goals: [CommunityGoalDraft]) async throws -> [CommunityGoal] {
+        let body = UpdateCommunityGoalsRequest(goals: goals.enumerated().map { idx, g in
+            UpdateCommunityGoalsRequest.Goal(
+                goalId: g.id, name: g.name,
+                description: g.description.isEmpty ? nil : g.description,
+                emoji: g.emoji, trackingType: g.trackingType.rawValue, order: idx)
+        })
+        struct Response: Decodable { let goals: [CommunityGoal] }
+        let response: Response = try await APIClient.shared.request(
+            path: "/communities/\(id)/goals", method: .put, body: body)
+        return response.goals
+    }
+
+    func getCommunityGoalUploadUrl(communityId: String, goalId: String) async throws -> CommunityGoalUploadUrlResponse {
+        try await APIClient.shared.request(
+            path: "/communities/\(communityId)/goals/\(goalId)/upload-url", method: .get)
+    }
+
+    func completeCommunityGoal(communityId: String, goalId: String, photoS3Key: String?, text: String?) async throws {
+        struct Body: Encodable { let photoS3Key: String?; let text: String? }
+        struct Response: Decodable { let completed: Bool }
+        let _: Response = try await APIClient.shared.request(
+            path: "/communities/\(communityId)/goals/\(goalId)/complete",
+            method: .post, body: Body(photoS3Key: photoS3Key, text: text))
+    }
+
+    func getCommunityGoalFeed(communityId: String, goalId: String) async throws -> [CommunityGoalCompletion] {
+        try await APIClient.shared.request(
+            path: "/communities/\(communityId)/goals/\(goalId)/feed", method: .get)
+    }
+
     func uploadCommunityPhoto(_ data: Data, to uploadUrl: String) async throws {
         guard let url = URL(string: uploadUrl) else { throw URLError(.badURL) }
         var request = URLRequest(url: url)

@@ -26,6 +26,16 @@ struct CommunityDetailView: View {
         }
         .navigationTitle(viewModel.community?.name ?? initialName ?? "Community")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if viewModel.isCreator {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink(destination: CommunitySettingsView(communityId: communityId)) {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 16, weight: .medium))
+                    }
+                }
+            }
+        }
         .task { await viewModel.load() }
         .refreshable { await viewModel.load() }
         .onChange(of: selectedPhotoItem) { _, item in
@@ -52,7 +62,7 @@ struct CommunityDetailView: View {
                 if !viewModel.isMember {
                     joinButton
                 } else {
-                    feedSection
+                    goalsSection
                 }
 
                 if !viewModel.leaderboard.isEmpty {
@@ -63,71 +73,47 @@ struct CommunityDetailView: View {
         }
     }
 
-    // MARK: - Feed
+    // MARK: - Goals
 
-    private var feedSection: some View {
+    private var goalsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Today's Feed")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Theme.textPrimary)
-                Spacer()
-                photoPickerButton
-            }
+            Text("Today's Goals")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(Theme.textSecondary)
+                .textCase(.uppercase)
+                .tracking(0.8)
 
-            if viewModel.isUploadingPhoto {
-                HStack(spacing: 10) {
-                    ProgressView()
-                    Text("Posting…")
-                        .font(.system(size: 14))
-                        .foregroundStyle(Theme.textSecondary)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-            }
-
-            if let err = viewModel.uploadError {
-                Text(err)
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color(hex: "FF4444"))
-            }
-
-            if viewModel.feedPosts.isEmpty && !viewModel.isUploadingPhoto {
-                emptyFeedPlaceholder
+            if viewModel.goals.isEmpty {
+                noGoalsPlaceholder
             } else {
-                feedGrid
+                VStack(spacing: 10) {
+                    ForEach(viewModel.goals) { goal in
+                        NavigationLink(destination: CommunityGoalFeedView(
+                            communityId: communityId, goal: goal)) {
+                            goalCard(goal: goal)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
             }
         }
     }
 
-    private var photoPickerButton: some View {
-        PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-            HStack(spacing: 6) {
-                Image(systemName: viewModel.myPost == nil ? "camera.fill" : "arrow.counterclockwise")
-                    .font(.system(size: 12, weight: .semibold))
-                Text(viewModel.myPost == nil ? "Post Photo" : "Retake")
-                    .font(.system(size: 13, weight: .semibold))
-            }
-            .foregroundStyle(.white)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 7)
-            .background(Theme.ink)
-            .clipShape(Capsule())
-        }
-        .disabled(viewModel.isUploadingPhoto)
-    }
-
-    private var emptyFeedPlaceholder: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "photo.on.rectangle.angled")
+    private var noGoalsPlaceholder: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "target")
                 .font(.system(size: 32))
                 .foregroundStyle(Theme.textSecondary.opacity(0.4))
-            Text("No photos yet today")
+            Text("No goals set up yet")
                 .font(.system(size: 14))
                 .foregroundStyle(Theme.textSecondary)
-            Text("Be the first to post!")
-                .font(.system(size: 12))
-                .foregroundStyle(Theme.textSecondary.opacity(0.7))
+            if viewModel.isCreator {
+                NavigationLink(destination: CommunitySettingsView(communityId: communityId)) {
+                    Text("Add Goals →")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Theme.accentGreen)
+                }
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 32)
@@ -135,47 +121,62 @@ struct CommunityDetailView: View {
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
-    private var feedGrid: some View {
-        let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
-        return LazyVGrid(columns: columns, spacing: 10) {
-            ForEach(viewModel.feedPosts) { post in
-                feedCell(post: post)
-            }
-        }
-    }
+    private func goalCard(goal: CommunityGoal) -> some View {
+        HStack(spacing: 14) {
+            Text(goal.emoji)
+                .font(.system(size: 28))
+                .frame(width: 48, height: 48)
+                .background(Theme.surfaceSecondary)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
-    private func feedCell(post: CommunityFeedPost) -> some View {
-        VStack(spacing: 6) {
-            AsyncImage(url: URL(string: post.photoUrl)) { phase in
-                switch phase {
-                case .success(let img):
-                    img.resizable()
-                        .scaledToFill()
-                        .frame(width: 100, height: 100)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .strokeBorder(post.isMe ? Theme.accentGreen : Color.clear, lineWidth: 2)
-                        )
-                case .failure:
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Theme.surfaceSecondary)
-                        .frame(width: 100, height: 100)
-                        .overlay(Image(systemName: "photo").foregroundStyle(Theme.textSecondary))
-                default:
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Theme.surfaceSecondary)
-                        .frame(width: 100, height: 100)
-                        .overlay(ProgressView())
+            VStack(alignment: .leading, spacing: 4) {
+                Text(goal.name)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Theme.textPrimary)
+                if let desc = goal.description, !desc.isEmpty {
+                    Text(desc)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.textSecondary)
+                        .lineLimit(1)
+                }
+                HStack(spacing: 4) {
+                    Image(systemName: goal.trackingType == .photo ? "camera.fill"
+                          : goal.trackingType == .text ? "text.bubble.fill" : "camera.badge.plus")
+                        .font(.system(size: 10))
+                        .foregroundStyle(Theme.textSecondary)
+                    Text(goal.trackingType.displayName)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.textSecondary)
                 }
             }
-            .frame(width: 100, height: 100)
 
-            Text(post.isMe ? "you" : post.username)
-                .font(.system(size: 11, weight: post.isMe ? .bold : .regular))
-                .foregroundStyle(post.isMe ? Theme.accentGreen : Theme.textSecondary)
-                .lineLimit(1)
+            Spacer()
+
+            if let completion = goal.myCompletion {
+                VStack(spacing: 4) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(Theme.accentGreen)
+                    Text("Done")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(Theme.accentGreen)
+                }
+            } else {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Theme.textSecondary.opacity(0.4))
+            }
         }
+        .padding(14)
+        .background(goal.myCompletion != nil
+                    ? Theme.accentGreen.opacity(0.05)
+                    : Theme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(goal.myCompletion != nil ? Theme.accentGreen.opacity(0.25) : Color.clear, lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 3)
     }
 
     // MARK: - Join

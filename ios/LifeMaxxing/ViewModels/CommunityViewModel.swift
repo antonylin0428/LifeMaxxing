@@ -7,6 +7,7 @@ import UIKit
 final class CommunityViewModel {
     var community: Community?
     var leaderboard: [CommunityLeaderboardEntry] = []
+    var goals: [CommunityGoal] = []
     var feedPosts: [CommunityFeedPost] = []
     var isLoading = false
     var isJoining = false
@@ -14,6 +15,7 @@ final class CommunityViewModel {
     var uploadError: String?
     var errorMessage: String?
     var isMember = false
+    var isCreator = false
 
     var myPost: CommunityFeedPost? { feedPosts.first { $0.isMe } }
 
@@ -36,8 +38,10 @@ final class CommunityViewModel {
             leaderboard = lb.leaderboard
             if let sub = mySub {
                 isMember = lb.leaderboard.contains { $0.sub == sub }
+                isCreator = c.createdBy == sub
             }
             if isMember {
+                goals = (try? await CommunitiesAPI.shared.getCommunityGoals(id: communityId)) ?? []
                 feedPosts = (try? await CommunitiesAPI.shared.getCommunityFeed(id: communityId)) ?? []
             }
         } catch {
@@ -51,6 +55,7 @@ final class CommunityViewModel {
         do {
             try await CommunitiesAPI.shared.joinCommunity(id: communityId)
             isMember = true
+            goals = (try? await CommunitiesAPI.shared.getCommunityGoals(id: communityId)) ?? []
             feedPosts = (try? await CommunitiesAPI.shared.getCommunityFeed(id: communityId)) ?? []
         } catch {
             errorMessage = error.localizedDescription

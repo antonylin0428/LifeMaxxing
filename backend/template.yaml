@@ -677,6 +677,120 @@ Resources:
             Path: /communities/{communityId}/feed
             Method: GET
 
+  GetCommunityGoalsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/getCommunityGoals/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:GetItem
+              Resource: !GetAtt CommunitiesTable.Arn
+            - Effect: Allow
+              Action: dynamodb:Query
+              Resource:
+                - !GetAtt CommunitiesTable.Arn
+                - !GetAtt CommunityFeedTable.Arn
+      Events:
+        GetCommunityGoals:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /communities/{communityId}/goals
+            Method: GET
+
+  UpdateCommunityGoalsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/updateCommunityGoals/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:Query
+                - dynamodb:PutItem
+                - dynamodb:DeleteItem
+              Resource: !GetAtt CommunitiesTable.Arn
+      Events:
+        UpdateCommunityGoals:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /communities/{communityId}/goals
+            Method: PUT
+
+  GetCommunityGoalUploadUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/getCommunityGoalUploadUrl/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:GetItem
+              Resource: !GetAtt CommunitiesTable.Arn
+            - Effect: Allow
+              Action: s3:PutObject
+              Resource: !Sub "${GymPhotosBucket.Arn}/community-feed/*"
+      Events:
+        GetCommunityGoalUploadUrl:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /communities/{communityId}/goals/{goalId}/upload-url
+            Method: GET
+
+  CompleteCommunityGoalFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/completeCommunityGoal/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:GetItem
+              Resource: !GetAtt CommunitiesTable.Arn
+            - Effect: Allow
+              Action: dynamodb:PutItem
+              Resource: !GetAtt CommunityFeedTable.Arn
+      Events:
+        CompleteCommunityGoal:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /communities/{communityId}/goals/{goalId}/complete
+            Method: POST
+
+  GetCommunityGoalFeedFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/getCommunityGoalFeed/
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:GetItem
+              Resource: !GetAtt CommunitiesTable.Arn
+            - Effect: Allow
+              Action: dynamodb:Query
+              Resource: !GetAtt CommunityFeedTable.Arn
+            - Effect: Allow
+              Action: dynamodb:BatchGetItem
+              Resource: !GetAtt UsersTable.Arn
+            - Effect: Allow
+              Action: s3:GetObject
+              Resource: !Sub "${GymPhotosBucket.Arn}/community-feed/*"
+      Events:
+        GetCommunityGoalFeed:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /communities/{communityId}/goals/{goalId}/feed
+            Method: GET
+
   SearchFriendsFunction:
     Type: AWS::Serverless::Function
     Properties:
