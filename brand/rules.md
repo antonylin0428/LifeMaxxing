@@ -422,6 +422,77 @@ Give me a 100-day streak
 
 ---
 
+## Rule: Row-Level Security (DynamoDB Data Isolation)
+
+DynamoDB has no native row-level security. This project enforces it at the Lambda layer instead. Every Lambda handler **must** follow these rules:
+
+### 1. Identity always comes from the JWT — never from the request body
+
+```js
+// CORRECT
+const userSub = getUserSub(event); // reads event.requestContext.authorizer.jwt.claims.sub
+
+// WRONG — never do this
+const { userId } = JSON.parse(event.body);
+```
+
+`getUserSub` is provided by the shared layer (`lifemaxxing-shared/identity.js`) and throws if the claim is missing. Every handler must call it before touching DynamoDB.
+
+### 2. All DynamoDB keys must be scoped to the authenticated user
+
+Every GetItem, PutItem, UpdateItem, DeleteItem, and Query that touches user-owned data must use `PK = USER#${userSub}` as the key. No handler may accept a user identifier from the client to scope a write.
+
+```js
+// CORRECT
+const pk = `USER#${userSub}`;
+await ddb.send(new GetCommand({ TableName: ..., Key: { PK: pk, SK: 'PROFILE' } }));
+
+// WRONG — PK built from client-supplied field
+const pk = `USER#${body.userId}`;
+```
+
+### 3. Cross-user reads are only allowed for public fields
+
+Reading another user's data is permitted only when:
+- The read is triggered by the authenticated user's action (e.g. loading a friend's leaderboard entry)
+- Only public fields are returned (username, rank, totalXP, avatarUrl)
+- The list of users to read is derived from the authenticated user's own relationships (friendships, community membership), never from a client-supplied list of arbitrary user IDs
+
+### 4. `hasCommunityAccess` may only be set by the Apple webhook or `verifyApplePurchase` Lambda
+
+No other Lambda or client request may set this field.
+
+---
+
+## Rule: API Rate Limiting
+
+All API Gateway HTTP API routes have throttling configured in `template.yaml` under `HttpApi.Properties.DefaultRouteSettings` and `RouteSettings`.
+
+### Current limits
+
+| Scope | Burst | Rate (req/sec) |
+|---|---|---|
+| All routes (default) | 50 | 20 |
+| `POST /tasks/complete` | 10 | 5 |
+| `POST /tasks/freeze` | 10 | 5 |
+| `GET /me/avatar-upload-url` | 10 | 5 |
+| `GET /communities/*/feed/upload-url` | 10 | 5 |
+| `GET /communities/*/goals/*/upload-url` | 10 | 5 |
+| `POST /communities` | 5 | 2 |
+| `POST /communities/*/join` | 10 | 5 |
+
+### Rules for new routes
+
+When adding a new Lambda route to `template.yaml`:
+
+- **Any route that calls a paid AWS service** (S3, SES, SNS, Rekognition, etc.) must get a `RouteSettings` entry with `ThrottlingBurstLimit: 10` and `ThrottlingRateLimit: 5` or lower.
+- **Any mutating route** (`POST`, `PUT`, `DELETE`) that writes to multiple DynamoDB tables in one request must get a `RouteSettings` entry.
+- **Read-only routes** (`GET`) that only query DynamoDB can rely on the default limits unless they fan out to many records.
+
+Limits are global (across all users) — API Gateway HTTP API does not support per-user throttling without a custom Lambda authorizer. If a user hits the limit they receive HTTP 429.
+
+---
+
 # Suggested DynamoDB Tables
 
 ## Users

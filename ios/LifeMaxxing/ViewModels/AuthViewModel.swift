@@ -101,6 +101,12 @@ final class AuthViewModel {
 
     func signOut() async {
         await AuthService.shared.signOut()
+        // Clear all per-user local state so the next account starts clean
+        FocusTimerManager.shared.reset()
+        ScreenDisciplineManager.shared.reset()
+        UserDefaults.standard.removeObject(forKey: "sd_goal_minutes")
+        UserDefaults.standard.removeObject(forKey: "selectedCategoryIds")
+        appState.localCategoryIds = CategoryId.allCases.filter { !$0.isOptional }
         appState.isSignedIn = false
         appState.currentUsername = nil
         appState.hasCompletedOnboarding = false

@@ -101,6 +101,36 @@ Resources:
                 - !Ref CognitoUserPoolClient
             IdentitySource: "$request.header.Authorization"
         DefaultAuthorizer: CognitoAuthorizer
+      # Global rate limits — protect all routes from abuse and runaway costs.
+      # All limits are per-region across all callers (API Gateway does not
+      # support per-user throttling on HTTP APIs without a custom authorizer).
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 50   # max concurrent in-flight requests
+        ThrottlingRateLimit: 20    # sustained req/sec across all users
+      # Tighter limits on routes that incur a cost-per-call (S3 presigned URLs,
+      # DynamoDB multi-table writes) or are obvious abuse targets.
+      RouteSettings:
+        "POST /tasks/complete":
+          ThrottlingBurstLimit: 10
+          ThrottlingRateLimit: 5
+        "POST /tasks/freeze":
+          ThrottlingBurstLimit: 10
+          ThrottlingRateLimit: 5
+        "GET /me/avatar-upload-url":
+          ThrottlingBurstLimit: 10
+          ThrottlingRateLimit: 5
+        "GET /communities/{communityId}/feed/upload-url":
+          ThrottlingBurstLimit: 10
+          ThrottlingRateLimit: 5
+        "GET /communities/{communityId}/goals/{goalId}/upload-url":
+          ThrottlingBurstLimit: 10
+          ThrottlingRateLimit: 5
+        "POST /communities":
+          ThrottlingBurstLimit: 5
+          ThrottlingRateLimit: 2
+        "POST /communities/{communityId}/join":
+          ThrottlingBurstLimit: 10
+          ThrottlingRateLimit: 5
 
   # ---------------------------------------------------------------------
   # DynamoDB tables - all on-demand (PAY_PER_REQUEST). See plan section 4
