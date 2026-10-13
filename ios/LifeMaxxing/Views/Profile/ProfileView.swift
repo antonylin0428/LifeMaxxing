@@ -46,19 +46,19 @@ struct ProfileView: View {
             avatarView(user: user)
 
             Text(user.username)
-                .font(.system(size: 20, weight: .bold))
+                .font(Theme.font(17))
                 .foregroundStyle(Theme.textPrimary)
 
             HStack(spacing: 6) {
                 Image(systemName: "trophy.fill")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(Theme.font(12, .regular))
                 Text(user.rank.displayName)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(Theme.font(13, .regular))
             }
-            .foregroundStyle(Color(hex: "7A5C00"))
+            .foregroundStyle(Color(hex: "7A3C10"))
             .padding(.horizontal, 14)
             .padding(.vertical, 7)
-            .background(Color(hex: "FFE07A").opacity(0.7))
+            .background(Theme.accent.opacity(0.18))
             .clipShape(Capsule())
         }
         .frame(maxWidth: .infinity)
@@ -91,7 +91,7 @@ struct ProfileView: View {
                 .fill(Color(hex: "E8E8E4"))
                 .frame(width: 80, height: 80)
             Text(String(user.username.prefix(1)).uppercased())
-                .font(.system(size: 32, weight: .bold))
+                .font(Theme.font(33))
                 .foregroundStyle(Theme.textPrimary)
         }
     }
@@ -116,9 +116,9 @@ struct ProfileView: View {
         let activeCount = viewModel.categories.filter { $0.enabled != false }.count
 
         return HStack(spacing: 10) {
-            StatTile(value: "\(user.totalXP)", label: "Total XP", color: Color(hex: "C5B5F5"))
-            StatTile(value: "\(bestStreak)d", label: "Best Streak", color: Color(hex: "A8D4F5"))
-            StatTile(value: "\(activeCount)", label: "Active", color: Color(hex: "B0E8AC"))
+            StatTile(value: "\(user.totalXP)", label: "Total XP", color: Theme.accent.opacity(0.22))
+            StatTile(value: "\(bestStreak)d", label: "Best Streak", color: Color(hex: "C8D8EC").opacity(0.7))
+            StatTile(value: "\(activeCount)", label: "Active", color: Theme.surfaceSecondary)
         }
     }
 
@@ -135,12 +135,12 @@ struct ProfileView: View {
                                 .fill(category.categoryId.color.opacity(0.6))
                                 .frame(width: 34, height: 34)
                             Image(systemName: category.categoryId.systemImageName)
-                                .font(.system(size: 14, weight: .medium))
+                                .font(Theme.font(15, .regular))
                                 .foregroundStyle(Theme.ink)
                         }
 
                         Text(category.categoryId.displayName)
-                            .font(.system(size: 14, weight: .medium))
+                            .font(Theme.font(14, .regular))
                             .foregroundStyle(Theme.textPrimary)
 
                         Spacer()
@@ -148,14 +148,14 @@ struct ProfileView: View {
                         VStack(alignment: .trailing, spacing: 2) {
                             HStack(spacing: 3) {
                                 Image(systemName: "flame.fill")
-                                    .foregroundStyle(.orange)
-                                    .font(.system(size: 10))
+                                    .foregroundStyle(Theme.accent)
+                                    .font(Theme.font(10))
                                 Text("\(category.currentStreak)d")
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .font(Theme.font(13, .regular))
                                     .foregroundStyle(Theme.textPrimary)
                             }
                             Text("best: \(category.longestStreak)d")
-                                .font(.system(size: 10))
+                                .font(Theme.font(11))
                                 .foregroundStyle(Theme.textSecondary)
                         }
                     }
@@ -217,7 +217,7 @@ struct ProfileView: View {
             Task { await authViewModel.signOut() }
         } label: {
             Text("Sign Out")
-                .font(.system(size: 16, weight: .semibold))
+                .font(Theme.font(17, .regular))
                 .foregroundStyle(Color(hex: "FF4444"))
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)

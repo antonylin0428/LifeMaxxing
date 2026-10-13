@@ -45,11 +45,14 @@ struct CategoryDetailView: View {
                     statsRow(s)
                 }
                 if categoryId == .fitness {
-                    fitnessPhotoCard
+                    if !isCompletedToday { fitnessPhotoCard }
                     fitnessSubmitCTA
                 } else if categoryId == .focus {
                     focusTimerCard
                     focusSubmitCTA
+                    if !focusTimer.sessions.isEmpty {
+                        focusSessionsList
+                    }
                 } else if categoryId == .screenDiscipline {
                     screenGoalCard
                     screenCheckInSection
@@ -106,7 +109,7 @@ struct CategoryDetailView: View {
                 .fill(categoryId.color)
 
             Image(systemName: categoryId.systemImageName)
-                .font(.system(size: 140, weight: .black))
+                .font(Theme.font(141))
                 .foregroundStyle(.black.opacity(0.07))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                 .padding(16)
@@ -118,11 +121,11 @@ struct CategoryDetailView: View {
                         .fill(.white.opacity(0.45))
                         .frame(width: 56, height: 56)
                     Image(systemName: categoryId.systemImageName)
-                        .font(.system(size: 26, weight: .semibold))
+                        .font(Theme.font(27, .regular))
                         .foregroundStyle(Theme.ink.opacity(0.75))
                 }
                 Text(categoryId.displayName)
-                    .font(.system(size: 32, weight: .black, design: .rounded))
+                    .font(Theme.font(27))
                     .foregroundStyle(Theme.ink)
             }
             .padding(24)
@@ -149,15 +152,15 @@ struct CategoryDetailView: View {
     }
 
     private func statTile(value: String, label: String, icon: String, iconColor: Color) -> some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.system(size: 18, weight: .bold))
+                .font(Theme.font(16, .regular))
                 .foregroundStyle(iconColor)
             Text(value)
-                .font(.system(size: 20, weight: .black, design: .rounded))
+                .font(Theme.font(18))
                 .foregroundStyle(Theme.textPrimary)
             Text(label)
-                .font(.system(size: 11, weight: .medium))
+                .font(Theme.font(11, .regular))
                 .foregroundStyle(Theme.textSecondary)
         }
         .frame(maxWidth: .infinity)
@@ -172,15 +175,15 @@ struct CategoryDetailView: View {
     private var promptCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Today's Challenge")
-                .font(.system(size: 11, weight: .bold))
+                .font(Theme.font(12))
                 .foregroundStyle(Theme.textSecondary)
                 .textCase(.uppercase)
                 .tracking(0.8)
 
             Text(categoryId.questPrompt)
-                .font(.system(size: 16))
+                .font(Theme.font(15))
                 .foregroundStyle(Theme.textPrimary)
-                .lineSpacing(5)
+                .lineSpacing(4)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
@@ -197,10 +200,10 @@ struct CategoryDetailView: View {
             if isCompletedToday {
                 HStack(spacing: 10) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 22))
+                        .font(Theme.font(23))
                         .foregroundStyle(Theme.accentGreen)
                     Text("Completed for today — great work!")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(Theme.font(16, .regular))
                         .foregroundStyle(Theme.textPrimary)
                 }
                 .frame(maxWidth: .infinity)
@@ -231,18 +234,17 @@ struct CategoryDetailView: View {
         VStack(spacing: 20) {
             HStack {
                 Text("Gym Photo")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(Theme.font(12))
                     .foregroundStyle(Theme.textSecondary)
                     .textCase(.uppercase)
                     .tracking(0.8)
                 Spacer()
                 if selectedPhotoData != nil {
-                    Button("Retake") {
-                        selectedPhotoItem = nil
-                        selectedPhotoData = nil
+                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                        Text("Retake")
+                            .font(Theme.font(14, .regular))
+                            .foregroundStyle(Theme.textSecondary)
                     }
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Theme.textSecondary)
                 }
             }
 
@@ -257,13 +259,13 @@ struct CategoryDetailView: View {
                 PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
                     VStack(spacing: 14) {
                         Image(systemName: "camera.fill")
-                            .font(.system(size: 36, weight: .semibold))
+                            .font(Theme.font(37, .regular))
                             .foregroundStyle(Theme.textSecondary)
                         Text("Choose a Gym Photo")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(Theme.font(16, .regular))
                             .foregroundStyle(Theme.textSecondary)
                         Text("Show your workout or a pump pic — your friends will see it!")
-                            .font(.system(size: 13))
+                            .font(Theme.font(14))
                             .foregroundStyle(Theme.textSecondary.opacity(0.7))
                             .multilineTextAlignment(.center)
                     }
@@ -288,10 +290,10 @@ struct CategoryDetailView: View {
             if isCompletedToday {
                 HStack(spacing: 10) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 22))
+                        .font(Theme.font(23))
                         .foregroundStyle(Theme.accentGreen)
                     Text("Workout logged for today — nice work!")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(Theme.font(16, .regular))
                         .foregroundStyle(Theme.textPrimary)
                 }
                 .frame(maxWidth: .infinity)
@@ -315,6 +317,13 @@ struct CategoryDetailView: View {
                 .buttonStyle(PrimaryButtonStyle())
                 .disabled(isUploading || isCompleting || selectedPhotoData == nil)
                 .padding(.horizontal, 20)
+
+                if selectedPhotoData == nil {
+                    Text("Choose a gym photo above to submit")
+                        .font(Theme.font(13))
+                        .foregroundStyle(Theme.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
             }
         }
     }
@@ -324,8 +333,10 @@ struct CategoryDetailView: View {
     private var focusTimerCard: some View {
         VStack(spacing: 24) {
             HStack(alignment: .center) {
-                Text("Study Timer")
-                    .font(.system(size: 11, weight: .bold))
+                Text(focusTimer.isSubmittedToday
+                     ? "Session \(focusTimer.sessions.count + 1)"
+                     : "Study Timer")
+                    .font(Theme.font(12))
                     .foregroundStyle(Theme.textSecondary)
                     .textCase(.uppercase)
                     .tracking(0.8)
@@ -339,37 +350,35 @@ struct CategoryDetailView: View {
                                 dot.opacity(opacity)
                             } animation: { _ in .easeInOut(duration: 0.7) }
                         Text("Recording")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(Theme.font(12, .regular))
                             .foregroundStyle(.red)
                     }
                 }
             }
 
             Text(focusTimer.formatted(focusTimer.displaySeconds))
-                .font(.system(size: 56, weight: .black, design: .monospaced))
+                .font(Theme.font(45))
                 .foregroundStyle(Theme.textPrimary)
                 .contentTransition(.numericText())
                 .animation(.linear(duration: 0.15), value: Int(focusTimer.displaySeconds))
                 .frame(maxWidth: .infinity)
 
-            if !isCompletedToday && !focusTimer.isSubmittedToday {
-                Button {
-                    focusTimer.toggleTimer()
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: focusTimer.isRunning ? "pause.fill" : "play.fill")
-                            .font(.system(size: 16, weight: .bold))
-                        Text(focusTimer.isRunning ? "Pause" : (focusTimer.hasTime ? "Resume" : "Start Session"))
-                            .font(.system(size: 16, weight: .semibold))
-                    }
+            Button {
+                focusTimer.toggleTimer()
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: focusTimer.isRunning ? "pause.fill" : "play.fill")
+                        .font(Theme.font(17))
+                    Text(focusTimer.isRunning ? "Pause" : (focusTimer.hasTime ? "Resume" : "Start Session"))
+                        .font(Theme.font(17, .regular))
                 }
-                .buttonStyle(PrimaryButtonStyle())
-                .animation(.spring(duration: 0.25), value: focusTimer.isRunning)
             }
+            .buttonStyle(PrimaryButtonStyle())
+            .animation(.spring(duration: 0.25), value: focusTimer.isRunning)
 
-            if !focusTimer.hasTime && !isCompletedToday && !focusTimer.isSubmittedToday {
+            if !focusTimer.hasTime && !focusTimer.isRunning {
                 Text("Stay in the app to keep the timer running. Leaving pauses it.")
-                    .font(.system(size: 12))
+                    .font(Theme.font(13))
                     .foregroundStyle(Theme.textSecondary)
                     .multilineTextAlignment(.center)
             }
@@ -385,26 +394,35 @@ struct CategoryDetailView: View {
 
     private var focusSubmitCTA: some View {
         Group {
-            if isCompletedToday || focusTimer.isSubmittedToday {
-                HStack(spacing: 12) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 22))
-                        .foregroundStyle(Theme.accentGreen)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Session submitted — great work!")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(Theme.textPrimary)
-                        if focusTimer.accumulatedSeconds > 0 {
-                            Text("\(focusTimer.formatted(focusTimer.accumulatedSeconds)) logged today")
-                                .font(.system(size: 12))
+            if focusTimer.isSubmittedToday || isCompletedToday {
+                VStack(spacing: 12) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(Theme.font(23))
+                            .foregroundStyle(Theme.accentGreen)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Session logged — keep it up!")
+                                .font(Theme.font(16, .regular))
+                                .foregroundStyle(Theme.textPrimary)
+                            Text("Total today: \(focusTimer.formatted(focusTimer.totalSecondsToday))")
+                                .font(Theme.font(13))
                                 .foregroundStyle(Theme.textSecondary)
                         }
+                        Spacer()
                     }
-                    Spacer()
+                    .padding(20)
+                    .background(Theme.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                    if focusTimer.hasTime {
+                        Button {
+                            focusTimer.markSubmitted()
+                        } label: {
+                            Text("Submit New Session")
+                        }
+                        .buttonStyle(PrimaryButtonStyle())
+                    }
                 }
-                .padding(20)
-                .background(Theme.surface)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .padding(.horizontal, 20)
             } else {
                 VStack(spacing: 8) {
@@ -423,7 +441,7 @@ struct CategoryDetailView: View {
 
                     if !focusTimer.hasTime {
                         Text("Start a session above to log your study time")
-                            .font(.system(size: 12))
+                            .font(Theme.font(13))
                             .foregroundStyle(Theme.textSecondary)
                     }
                 }
@@ -437,13 +455,13 @@ struct CategoryDetailView: View {
         VStack(alignment: .leading, spacing: 16) {
             if isEditingGoal {
                 Text("Set Daily Goal")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(Theme.font(12))
                     .foregroundStyle(Theme.textSecondary)
                     .textCase(.uppercase)
                     .tracking(0.8)
 
                 Text("Aim to stay under this much screen time:")
-                    .font(.system(size: 14))
+                    .font(Theme.font(15))
                     .foregroundStyle(Theme.textPrimary)
 
                 HStack(spacing: 0) {
@@ -465,7 +483,7 @@ struct CategoryDetailView: View {
                     Button("Cancel") {
                         withAnimation(.spring(duration: 0.3)) { isEditingGoal = false }
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(Theme.font(16, .regular))
                     .foregroundStyle(Theme.textSecondary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
@@ -476,7 +494,7 @@ struct CategoryDetailView: View {
                         sdManager.setGoal(editGoalHours * 60 + editGoalMins)
                         withAnimation(.spring(duration: 0.3)) { isEditingGoal = false }
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(Theme.font(16, .regular))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
@@ -487,7 +505,7 @@ struct CategoryDetailView: View {
             } else {
                 HStack {
                     Text("Daily Goal")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(Theme.font(12))
                         .foregroundStyle(Theme.textSecondary)
                         .textCase(.uppercase)
                         .tracking(0.8)
@@ -498,17 +516,17 @@ struct CategoryDetailView: View {
                             editGoalMins = sdManager.goalMinutes % 60
                             withAnimation(.spring(duration: 0.3)) { isEditingGoal = true }
                         }
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(Theme.font(14, .regular))
                         .foregroundStyle(Theme.textSecondary)
                     }
                 }
 
                 Text("≤ \(formatMinutes(sdManager.goalMinutes)) per day")
-                    .font(.system(size: 28, weight: .black, design: .rounded))
+                    .font(Theme.font(23))
                     .foregroundStyle(Theme.textPrimary)
 
                 Text("Open Settings → Screen Time → See All Activity to find today's total.")
-                    .font(.system(size: 13))
+                    .font(Theme.font(14))
                     .foregroundStyle(Theme.textSecondary)
                     .lineSpacing(3)
             }
@@ -530,17 +548,17 @@ struct CategoryDetailView: View {
                 let met = sdManager.metGoalToday
                 HStack(spacing: 12) {
                     Image(systemName: met == false ? "arrow.up.circle.fill" : "checkmark.circle.fill")
-                        .font(.system(size: 22))
+                        .font(Theme.font(23))
                         .foregroundStyle(met == false ? Color.orange : Theme.accentGreen)
                     VStack(alignment: .leading, spacing: 3) {
                         Text(met == false
                              ? "Over today — keep working at it."
                              : "Under your goal — great job!")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(Theme.font(16, .regular))
                             .foregroundStyle(Theme.textPrimary)
                         if let mins = sdManager.todayMinutes {
                             Text("\(formatMinutes(mins)) used vs ≤ \(formatMinutes(sdManager.goalMinutes)) goal")
-                                .font(.system(size: 12))
+                                .font(Theme.font(13))
                                 .foregroundStyle(Theme.textSecondary)
                         }
                     }
@@ -554,13 +572,13 @@ struct CategoryDetailView: View {
                 VStack(spacing: 16) {
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Today's Check-In")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(Theme.font(12))
                             .foregroundStyle(Theme.textSecondary)
                             .textCase(.uppercase)
                             .tracking(0.8)
 
                         Text("How much screen time did you log today?")
-                            .font(.system(size: 15))
+                            .font(Theme.font(16))
                             .foregroundStyle(Theme.textPrimary)
 
                         HStack(spacing: 0) {
@@ -599,6 +617,52 @@ struct CategoryDetailView: View {
                 .padding(.horizontal, 20)
             }
         }
+    }
+
+    // MARK: - Helpers
+
+    // MARK: - Focus: Sessions List
+
+    private var focusSessionsList: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Today's Sessions")
+                .font(Theme.font(12))
+                .foregroundStyle(Theme.textSecondary)
+                .textCase(.uppercase)
+                .tracking(0.8)
+
+            ForEach(Array(focusTimer.sessions.enumerated()), id: \.element.id) { index, session in
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Session \(index + 1)")
+                            .font(Theme.font(14))
+                            .foregroundStyle(Theme.textPrimary)
+                        HStack(spacing: 4) {
+                            Text(shortTime(session.startedAt))
+                            Text("→")
+                            Text(shortTime(session.submittedAt))
+                        }
+                        .font(Theme.font(11))
+                        .foregroundStyle(Theme.textSecondary)
+                    }
+                    Spacer()
+                    Text(focusTimer.formatted(session.seconds))
+                        .font(Theme.font(15))
+                        .foregroundStyle(Theme.textPrimary)
+                }
+                .padding(14)
+                .background(Theme.surface)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .shadow(color: .black.opacity(0.03), radius: 6, x: 0, y: 2)
+            }
+        }
+        .padding(.horizontal, 20)
+    }
+
+    private func shortTime(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.timeStyle = .short
+        return f.string(from: date)
     }
 
     // MARK: - Helpers

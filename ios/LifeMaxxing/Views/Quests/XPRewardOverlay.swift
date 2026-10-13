@@ -15,20 +15,20 @@ struct XPRewardOverlay: View {
                         .fill(Theme.highlight.opacity(0.3))
                         .frame(width: 72, height: 72)
                     Text("+\(result.finalXPAwarded)")
-                        .font(.system(size: 28, weight: .black, design: .rounded))
+                        .font(Theme.font(29))
                         .foregroundStyle(Theme.ink)
                 }
 
                 VStack(spacing: 6) {
                     Text("XP Earned!")
-                        .font(.system(size: 18, weight: .bold))
+                        .font(Theme.font(19))
                         .foregroundStyle(Theme.textPrimary)
                     HStack(spacing: 4) {
                         Image(systemName: "flame.fill")
                             .foregroundStyle(.orange)
-                            .font(.system(size: 12))
+                            .font(Theme.font(13))
                         Text("Streak: \(result.newStreak) days (\(String(format: "%.2f", result.newMultiplier))x)")
-                            .font(.system(size: 13))
+                            .font(Theme.font(14))
                             .foregroundStyle(Theme.textSecondary)
                     }
                 }
@@ -38,7 +38,7 @@ struct XPRewardOverlay: View {
                         Image(systemName: "trophy.fill")
                             .foregroundStyle(Color(hex: "E8A000"))
                         Text("Rank up! \(result.newRank.displayName)")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(Theme.font(15))
                             .foregroundStyle(Theme.textPrimary)
                     }
                     .padding(.horizontal, 16)
@@ -48,7 +48,7 @@ struct XPRewardOverlay: View {
                 }
 
                 Text("Tap to dismiss")
-                    .font(.system(size: 11))
+                    .font(Theme.font(12))
                     .foregroundStyle(Theme.textSecondary)
             }
             .padding(28)

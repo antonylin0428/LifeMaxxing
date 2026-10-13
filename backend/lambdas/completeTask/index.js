@@ -207,7 +207,7 @@ exports.handler = async (event) => {
     isFirstCompletion: !categoryStats.lastCompletedDate,
     newStreak,
     newTotalXP,
-    existingAchievements: user.achievements || [],
+    existingAchievements: Array.from(user.achievements || []),
   });
 
   if (newlyUnlocked.length > 0) {
@@ -238,7 +238,7 @@ exports.handler = async (event) => {
 };
 
 function computeNewAchievements({ categoryId, isFirstCompletion, newStreak, newTotalXP, existingAchievements }) {
-  const has = (id) => existingAchievements.includes(id) || (existingAchievements.has && existingAchievements.has(id));
+  const has = (id) => existingAchievements.includes(id);
   const earned = [];
 
   if (isFirstCompletion && categoryId === 'FITNESS' && !has('first-workout')) earned.push('first-workout');

@@ -6,10 +6,10 @@ struct ErrorBanner: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "exclamationmark.circle.fill")
-                .font(.system(size: 15, weight: .semibold))
+                .font(Theme.font(16, .regular))
                 .foregroundStyle(.white)
             Text(message)
-                .font(.system(size: 13, weight: .medium))
+                .font(Theme.font(14, .regular))
                 .foregroundStyle(.white)
                 .fixedSize(horizontal: false, vertical: true)
         }

@@ -12,10 +12,10 @@ struct SignUpView: View {
                 VStack(alignment: .leading, spacing: 32) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Create account")
-                            .font(.system(size: 28, weight: .bold))
+                            .font(Theme.font(29))
                             .foregroundStyle(Theme.textPrimary)
                         Text("Start your leveling journey today")
-                            .font(.system(size: 15))
+                            .font(Theme.font(16))
                             .foregroundStyle(Theme.textSecondary)
                     }
                     .padding(.top, 8)
@@ -40,7 +40,7 @@ struct SignUpView: View {
                     .disabled(viewModel.isLoading)
 
                     Text("By creating an account you agree to our Terms of Service.")
-                        .font(.system(size: 12))
+                        .font(Theme.font(13))
                         .foregroundStyle(Theme.textSecondary)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)

@@ -19,7 +19,7 @@ struct CommunityPaywallView: View {
                             .fill(Color(hex: "C5B5F5").opacity(0.4))
                             .frame(width: 100, height: 100)
                         Image(systemName: "person.3.fill")
-                            .font(.system(size: 40, weight: .bold))
+                            .font(Theme.font(41))
                             .foregroundStyle(Color(hex: "7A5CF5"))
                     }
                     .padding(.top, 12)
@@ -27,10 +27,10 @@ struct CommunityPaywallView: View {
                     // Copy
                     VStack(spacing: 12) {
                         Text("Create a Community")
-                            .font(.system(size: 26, weight: .bold))
+                            .font(Theme.font(27))
                             .foregroundStyle(Theme.textPrimary)
                         Text("One-time purchase. Create your own community and challenge others to compete alongside you. Joining communities is always free.")
-                            .font(.system(size: 15))
+                            .font(Theme.font(16))
                             .foregroundStyle(Theme.textSecondary)
                             .multilineTextAlignment(.center)
                     }
@@ -60,7 +60,7 @@ struct CommunityPaywallView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         } else {
                             Text(priceLabel)
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(Theme.font(17, .regular))
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 52)
@@ -75,11 +75,11 @@ struct CommunityPaywallView: View {
                     Button("Restore Purchases") {
                         Task { await restore() }
                     }
-                    .font(.system(size: 13))
+                    .font(Theme.font(14))
                     .foregroundStyle(Theme.textSecondary)
 
                     Text("Payment processed by Apple. Cancel anytime via Settings → Apple Account → Subscriptions is not applicable — this is a one-time purchase.")
-                        .font(.system(size: 11))
+                        .font(Theme.font(12))
                         .foregroundStyle(Theme.textSecondary.opacity(0.7))
                         .multilineTextAlignment(.center)
                         .padding(.bottom, 24)
@@ -145,11 +145,11 @@ struct CommunityPaywallView: View {
                     .fill(Color(hex: "C5B5F5").opacity(0.4))
                     .frame(width: 32, height: 32)
                 Image(systemName: icon)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(Theme.font(14, .regular))
                     .foregroundStyle(Color(hex: "7A5CF5"))
             }
             Text(text)
-                .font(.system(size: 14, weight: .medium))
+                .font(Theme.font(15, .regular))
                 .foregroundStyle(Theme.textPrimary)
         }
     }

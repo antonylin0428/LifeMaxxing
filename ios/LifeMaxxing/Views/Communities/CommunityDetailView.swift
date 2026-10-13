@@ -31,7 +31,7 @@ struct CommunityDetailView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink(destination: CommunitySettingsView(communityId: communityId)) {
                         Image(systemName: "gearshape")
-                            .font(.system(size: 16, weight: .medium))
+                            .font(Theme.font(17, .regular))
                     }
                 }
             }
@@ -78,7 +78,7 @@ struct CommunityDetailView: View {
     private var goalsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Today's Goals")
-                .font(.system(size: 13, weight: .bold))
+                .font(Theme.font(14))
                 .foregroundStyle(Theme.textSecondary)
                 .textCase(.uppercase)
                 .tracking(0.8)
@@ -102,15 +102,15 @@ struct CommunityDetailView: View {
     private var noGoalsPlaceholder: some View {
         VStack(spacing: 10) {
             Image(systemName: "target")
-                .font(.system(size: 32))
+                .font(Theme.font(33))
                 .foregroundStyle(Theme.textSecondary.opacity(0.4))
             Text("No goals set up yet")
-                .font(.system(size: 14))
+                .font(Theme.font(15))
                 .foregroundStyle(Theme.textSecondary)
             if viewModel.isCreator {
                 NavigationLink(destination: CommunitySettingsView(communityId: communityId)) {
                     Text("Add Goals →")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(Theme.font(14, .regular))
                         .foregroundStyle(Theme.accentGreen)
                 }
             }
@@ -124,28 +124,28 @@ struct CommunityDetailView: View {
     private func goalCard(goal: CommunityGoal) -> some View {
         HStack(spacing: 14) {
             Text(goal.emoji)
-                .font(.system(size: 28))
+                .font(Theme.font(29))
                 .frame(width: 48, height: 48)
                 .background(Theme.surfaceSecondary)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(goal.name)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(Theme.font(16, .regular))
                     .foregroundStyle(Theme.textPrimary)
                 if let desc = goal.description, !desc.isEmpty {
                     Text(desc)
-                        .font(.system(size: 12))
+                        .font(Theme.font(13))
                         .foregroundStyle(Theme.textSecondary)
                         .lineLimit(1)
                 }
                 HStack(spacing: 4) {
                     Image(systemName: goal.trackingType == .photo ? "camera.fill"
                           : goal.trackingType == .text ? "text.bubble.fill" : "camera.badge.plus")
-                        .font(.system(size: 10))
+                        .font(Theme.font(11))
                         .foregroundStyle(Theme.textSecondary)
                     Text(goal.trackingType.displayName)
-                        .font(.system(size: 11))
+                        .font(Theme.font(12))
                         .foregroundStyle(Theme.textSecondary)
                 }
             }
@@ -155,15 +155,15 @@ struct CommunityDetailView: View {
             if let completion = goal.myCompletion {
                 VStack(spacing: 4) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 22))
+                        .font(Theme.font(23))
                         .foregroundStyle(Theme.accentGreen)
                     Text("Done")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(Theme.font(11, .regular))
                         .foregroundStyle(Theme.accentGreen)
                 }
             } else {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(Theme.font(14, .regular))
                     .foregroundStyle(Theme.textSecondary.opacity(0.4))
             }
         }
@@ -190,7 +190,7 @@ struct CommunityDetailView: View {
                     ProgressView().tint(.white)
                 } else {
                     Text("Join Community")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(Theme.font(17, .regular))
                         .foregroundStyle(.white)
                 }
             }
@@ -212,30 +212,30 @@ struct CommunityDetailView: View {
                         .fill(Color(hex: "C5B5F5").opacity(0.3))
                         .frame(width: 52, height: 52)
                     Image(systemName: "person.3.fill")
-                        .font(.system(size: 22, weight: .medium))
+                        .font(Theme.font(23, .regular))
                         .foregroundStyle(Color(hex: "7A5CF5"))
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(community.name)
-                        .font(.system(size: 20, weight: .bold))
+                        .font(Theme.font(21))
                         .foregroundStyle(Theme.textPrimary)
                     Text("Created by \(community.createdByUsername)")
-                        .font(.system(size: 12))
+                        .font(Theme.font(13))
                         .foregroundStyle(Theme.textSecondary)
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {
                     Text("\(community.memberCount ?? viewModel.leaderboard.count)")
-                        .font(.system(size: 20, weight: .bold))
+                        .font(Theme.font(21))
                         .foregroundStyle(Theme.textPrimary)
                     Text("members")
-                        .font(.system(size: 11))
+                        .font(Theme.font(12))
                         .foregroundStyle(Theme.textSecondary)
                 }
             }
             if let desc = community.description, !desc.isEmpty {
                 Text(desc)
-                    .font(.system(size: 14))
+                    .font(Theme.font(15))
                     .foregroundStyle(Theme.textSecondary)
             }
         }
@@ -250,7 +250,7 @@ struct CommunityDetailView: View {
     private var leaderboardSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Leaderboard")
-                .font(.system(size: 16, weight: .semibold))
+                .font(Theme.font(17, .regular))
                 .foregroundStyle(Theme.textPrimary)
 
             VStack(spacing: 0) {
@@ -270,7 +270,7 @@ struct CommunityDetailView: View {
     private func leaderboardRow(entry: CommunityLeaderboardEntry, rank: Int) -> some View {
         let rowContent = HStack(spacing: 14) {
             Text("\(rank)")
-                .font(.system(size: 14, weight: .bold))
+                .font(Theme.font(15))
                 .foregroundStyle(rank <= 3 ? Color(hex: "F5A623") : Theme.textSecondary)
                 .frame(width: 24, alignment: .center)
 
@@ -281,7 +281,7 @@ struct CommunityDetailView: View {
                         .foregroundStyle(Theme.textPrimary)
                     if entry.isMe {
                         Text("you")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(Theme.font(11, .regular))
                             .foregroundStyle(Theme.accentGreen)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
@@ -291,13 +291,13 @@ struct CommunityDetailView: View {
                 }
                 if let rank = entry.rank {
                     Text(rank.rawValue)
-                        .font(.system(size: 11))
+                        .font(Theme.font(12))
                         .foregroundStyle(Theme.textSecondary)
                 }
             }
             Spacer()
             Text("\(entry.totalXP) XP")
-                .font(.system(size: 13, weight: .semibold))
+                .font(Theme.font(14, .regular))
                 .foregroundStyle(Theme.textSecondary)
         }
         .padding(.horizontal, 16)

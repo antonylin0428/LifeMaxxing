@@ -16,16 +16,16 @@ struct WelcomeView: View {
                                 .fill(Theme.ink)
                                 .frame(width: 96, height: 96)
                             Image(systemName: "bolt.fill")
-                                .font(.system(size: 42, weight: .bold))
+                                .font(Theme.font(43))
                                 .foregroundStyle(Theme.highlight)
                         }
 
                         VStack(spacing: 10) {
                             Text("LifeMaxxing")
-                                .font(.system(size: 34, weight: .black, design: .rounded))
+                                .font(Theme.font(35))
                                 .foregroundStyle(Theme.textPrimary)
                             Text("Complete daily goals.\nEarn XP. Rank up.")
-                                .font(.system(size: 16))
+                                .font(Theme.font(17))
                                 .foregroundStyle(Theme.textSecondary)
                                 .multilineTextAlignment(.center)
                         }
@@ -73,11 +73,11 @@ struct WelcomeView: View {
                     .fill(color)
                     .frame(width: 60, height: 60)
                 Image(systemName: icon)
-                    .font(.system(size: 24, weight: .medium))
+                    .font(Theme.font(25, .regular))
                     .foregroundStyle(Theme.ink)
             }
             Text(label)
-                .font(.system(size: 11, weight: .medium))
+                .font(Theme.font(12, .regular))
                 .foregroundStyle(Theme.textSecondary)
         }
         .frame(maxWidth: .infinity)

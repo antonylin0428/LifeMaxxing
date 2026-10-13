@@ -27,7 +27,7 @@ struct FriendsListView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink { AddFriendView() } label: {
                     Image(systemName: "person.badge.plus")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(Theme.font(17, .regular))
                 }
             }
         }
@@ -52,12 +52,12 @@ struct FriendsListView: View {
                             .frame(width: 44, height: 44)
                             .overlay(
                                 Text(String(request.requesterUsername.prefix(1)).uppercased())
-                                    .font(.system(size: 17, weight: .bold))
+                                    .font(Theme.font(18))
                                     .foregroundStyle(Theme.ink)
                             )
 
                         Text(request.requesterUsername)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(Theme.font(16, .regular))
                             .foregroundStyle(Theme.textPrimary)
 
                         Spacer()
@@ -65,7 +65,7 @@ struct FriendsListView: View {
                         Button("Accept") {
                             Task { await viewModel.accept(request) }
                         }
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(Theme.font(14, .regular))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 7)
@@ -74,7 +74,7 @@ struct FriendsListView: View {
                         Button("Decline") {
                             Task { await viewModel.decline(request) }
                         }
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(Theme.font(14, .regular))
                         .foregroundStyle(Theme.textSecondary)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 7)
@@ -108,18 +108,18 @@ struct FriendsListView: View {
                                     .frame(width: 44, height: 44)
                                     .overlay(
                                         Text(String(friend.friendUsername.prefix(1)).uppercased())
-                                            .font(.system(size: 17, weight: .bold))
+                                            .font(Theme.font(18))
                                             .foregroundStyle(Theme.ink)
                                     )
 
                                 Text(friend.friendUsername)
-                                    .font(.system(size: 15, weight: .medium))
+                                    .font(Theme.font(16, .regular))
                                     .foregroundStyle(Theme.textPrimary)
 
                                 Spacer()
 
                                 Image(systemName: "chevron.right")
-                                    .font(.system(size: 12, weight: .medium))
+                                    .font(Theme.font(13, .regular))
                                     .foregroundStyle(Theme.textSecondary.opacity(0.5))
                             }
                             .padding(14)
@@ -137,13 +137,13 @@ struct FriendsListView: View {
     private var emptyState: some View {
         VStack(spacing: 14) {
             Image(systemName: "person.2")
-                .font(.system(size: 36, weight: .light))
+                .font(Theme.font(37, .regular))
                 .foregroundStyle(Theme.textSecondary)
             Text("No friends yet")
-                .font(.system(size: 16, weight: .semibold))
+                .font(Theme.font(17, .regular))
                 .foregroundStyle(Theme.textPrimary)
             Text("Search for people using the + button")
-                .font(.system(size: 13))
+                .font(Theme.font(14))
                 .foregroundStyle(Theme.textSecondary)
         }
         .frame(maxWidth: .infinity)

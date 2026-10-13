@@ -23,7 +23,7 @@ struct MyCommunityListView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink(destination: CreateCommunityView()) {
                     Image(systemName: "plus")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(Theme.font(17, .regular))
                         .foregroundStyle(Theme.textPrimary)
                 }
             }
@@ -56,22 +56,22 @@ struct MyCommunityListView: View {
                     .fill(Color(hex: "C5B5F5").opacity(0.25))
                     .frame(width: 44, height: 44)
                 Image(systemName: "person.3.fill")
-                    .font(.system(size: 18, weight: .medium))
+                    .font(Theme.font(19, .regular))
                     .foregroundStyle(Color(hex: "7A5CF5"))
             }
             VStack(alignment: .leading, spacing: 3) {
                 Text(community.name)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(Theme.font(16, .regular))
                     .foregroundStyle(Theme.textPrimary)
                     .lineLimit(1)
                 Text("\(community.memberCount ?? 0) members · by \(community.createdByUsername)")
-                    .font(.system(size: 12))
+                    .font(Theme.font(13))
                     .foregroundStyle(Theme.textSecondary)
                     .lineLimit(1)
             }
             Spacer()
             Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
+                .font(Theme.font(13, .regular))
                 .foregroundStyle(Theme.textSecondary)
         }
         .padding(14)
@@ -87,21 +87,21 @@ struct MyCommunityListView: View {
                     .fill(Color(hex: "C5B5F5").opacity(0.3))
                     .frame(width: 80, height: 80)
                 Image(systemName: "person.3.fill")
-                    .font(.system(size: 34, weight: .medium))
+                    .font(Theme.font(35, .regular))
                     .foregroundStyle(Color(hex: "7A5CF5"))
             }
             VStack(spacing: 8) {
                 Text("No communities yet")
-                    .font(.system(size: 20, weight: .bold))
+                    .font(Theme.font(21))
                     .foregroundStyle(Theme.textPrimary)
                 Text("Create a community and challenge others to compete with you.")
-                    .font(.system(size: 14))
+                    .font(Theme.font(15))
                     .foregroundStyle(Theme.textSecondary)
                     .multilineTextAlignment(.center)
             }
             NavigationLink(destination: CreateCommunityView()) {
                 Text("Create a Community")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(Theme.font(16, .regular))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)

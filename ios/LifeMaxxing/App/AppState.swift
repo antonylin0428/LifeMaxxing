@@ -14,17 +14,15 @@ final class AppState {
         didSet { UserDefaults.standard.set(hasCompletedOnboarding, forKey: "onboardingComplete") }
     }
 
-    // Categories to display on the home screen.
-    // Required categories are always included. Optional ones are added if the
-    // user selected them during onboarding OR if the API says they're enabled.
-    var localCategoryIds: [CategoryId] {
+    // Categories to display on the home screen. Stored so @Observable can
+    // propagate changes to HomeView immediately (a computed property would not).
+    var localCategoryIds: [CategoryId] = {
         let required = CategoryId.allCases.filter { !$0.isOptional }
-        let selectedOptional: [CategoryId]
         if let raw = UserDefaults.standard.stringArray(forKey: "selectedCategoryIds") {
-            selectedOptional = raw.compactMap { CategoryId(rawValue: $0) }.filter { $0.isOptional }
-        } else {
-            selectedOptional = []
+            let optional = raw.compactMap { CategoryId(rawValue: $0) }.filter { $0.isOptional }
+            return required + optional
         }
-        return required + selectedOptional
-    }
+        return required
+    }()
+
 }

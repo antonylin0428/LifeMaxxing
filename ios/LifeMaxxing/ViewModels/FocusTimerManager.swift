@@ -1,30 +1,45 @@
 import Foundation
 import Observation
 
+struct FocusSession: Codable, Identifiable {
+    var id: UUID = UUID()
+    let startedAt: Date
+    let submittedAt: Date
+    let seconds: TimeInterval
+}
+
 @Observable
 final class FocusTimerManager {
     static let shared = FocusTimerManager()
 
     private enum K {
-        static let sessionStart = "focus_session_start_v2"
-        static let accumulated  = "focus_accumulated_v2"
-        static let date         = "focus_date_v2"
-        static let submitted    = "focus_submitted_v2"
+        static let accumulated      = "focus_accumulated_v2"
+        static let date             = "focus_date_v2"
+        static let submitted        = "focus_submitted_v2"
+        static let sessions         = "focus_sessions_v3"
+        static let sessionStartedAt = "focus_session_started_at_v3"
     }
 
-    private(set) var isRunning        = false
+    private(set) var isRunning             = false
     private(set) var accumulatedSeconds: TimeInterval = 0
-    private(set) var isSubmittedToday = false
-    // Driven by tick() every second
+    private(set) var isSubmittedToday      = false
     private(set) var displaySeconds: TimeInterval = 0
+    private(set) var sessions: [FocusSession] = []
 
     private var sessionStart: Date?
+    private var currentSessionStartedAt: Date?
 
     private init() { restore() }
 
-    // MARK: - Public
+    // MARK: - Computed
 
     var hasTime: Bool { displaySeconds > 0 }
+
+    var totalSecondsToday: TimeInterval {
+        sessions.reduce(0) { $0 + $1.seconds } + displaySeconds
+    }
+
+    // MARK: - Formatting
 
     func formatted(_ seconds: TimeInterval) -> String {
         let t = Int(seconds)
@@ -34,13 +49,17 @@ final class FocusTimerManager {
             : String(format: "%02d:%02d", m, s)
     }
 
+    // MARK: - Controls
+
     func toggleTimer() { isRunning ? pause() : startSession() }
 
-    // Called by RootView scene-phase observer when app goes to background
     func handleBackground() { pause() }
 
     func startSession() {
-        guard !isRunning, !isSubmittedToday else { return }
+        guard !isRunning else { return }
+        if currentSessionStartedAt == nil {
+            currentSessionStartedAt = Date()
+        }
         sessionStart = Date()
         isRunning = true
     }
@@ -57,27 +76,38 @@ final class FocusTimerManager {
         save()
     }
 
-    // Call every second from Timer.publish while the view is visible
     func tick() {
         guard let start = sessionStart else { return }
         displaySeconds = accumulatedSeconds + Date().timeIntervalSince(start)
     }
 
-    // Call after a successful completeTask API response
+    // Call after a successful completeTask API response (first session)
+    // OR directly for additional sessions — no API needed.
     func markSubmitted() {
         pause()
+        let secs = accumulatedSeconds
+        guard secs > 0 else { return }
+        sessions.append(FocusSession(
+            startedAt: currentSessionStartedAt ?? Date(),
+            submittedAt: Date(),
+            seconds: secs
+        ))
+        accumulatedSeconds = 0
+        displaySeconds = 0
+        currentSessionStartedAt = nil
         isSubmittedToday = true
         save()
     }
 
-    // Call on sign-out
     func reset() {
         sessionStart = nil
+        currentSessionStartedAt = nil
         isRunning = false
         accumulatedSeconds = 0
         displaySeconds = 0
         isSubmittedToday = false
-        [K.sessionStart, K.accumulated, K.date, K.submitted]
+        sessions = []
+        [K.accumulated, K.date, K.submitted, K.sessions, K.sessionStartedAt]
             .forEach { UserDefaults.standard.removeObject(forKey: $0) }
     }
 
@@ -90,17 +120,22 @@ final class FocusTimerManager {
         if savedDate == today {
             accumulatedSeconds = UserDefaults.standard.double(forKey: K.accumulated)
             isSubmittedToday   = UserDefaults.standard.bool(forKey: K.submitted)
-            // Any leftover sessionStart means the app was force-killed while running.
-            // Leaving the app stops the timer, so discard that uncounted interval.
-            UserDefaults.standard.removeObject(forKey: K.sessionStart)
             sessionStart = nil
             isRunning    = false
+
+            if let data = UserDefaults.standard.data(forKey: K.sessions),
+               let decoded = try? JSONDecoder().decode([FocusSession].self, from: data) {
+                sessions = decoded
+            }
+            let ts = UserDefaults.standard.double(forKey: K.sessionStartedAt)
+            if ts > 0 { currentSessionStartedAt = Date(timeIntervalSince1970: ts) }
         } else {
-            // New UTC day — reset
-            accumulatedSeconds = 0
-            isSubmittedToday   = false
-            sessionStart       = nil
-            isRunning          = false
+            accumulatedSeconds       = 0
+            isSubmittedToday         = false
+            sessionStart             = nil
+            isRunning                = false
+            sessions                 = []
+            currentSessionStartedAt  = nil
             save()
         }
         tick()
@@ -111,9 +146,14 @@ final class FocusTimerManager {
     private func save() {
         UserDefaults.standard.set(todayUTC(),         forKey: K.date)
         UserDefaults.standard.set(accumulatedSeconds, forKey: K.accumulated)
-        UserDefaults.standard.set(isSubmittedToday,  forKey: K.submitted)
-        if sessionStart == nil {
-            UserDefaults.standard.removeObject(forKey: K.sessionStart)
+        UserDefaults.standard.set(isSubmittedToday,   forKey: K.submitted)
+        if let data = try? JSONEncoder().encode(sessions) {
+            UserDefaults.standard.set(data, forKey: K.sessions)
+        }
+        if let ts = currentSessionStartedAt {
+            UserDefaults.standard.set(ts.timeIntervalSince1970, forKey: K.sessionStartedAt)
+        } else {
+            UserDefaults.standard.removeObject(forKey: K.sessionStartedAt)
         }
     }
 

@@ -65,10 +65,10 @@ struct ProfileSettingsView: View {
 
             VStack(spacing: 6) {
                 Text(user.username)
-                    .font(.system(size: 18, weight: .bold))
+                    .font(Theme.font(19))
                     .foregroundStyle(Theme.textPrimary)
                 Text("Tap photo to change")
-                    .font(.system(size: 13))
+                    .font(Theme.font(14))
                     .foregroundStyle(Theme.textSecondary)
             }
         }
@@ -125,7 +125,7 @@ struct ProfileSettingsView: View {
                 .frame(width: 32, height: 32)
                 .overlay(Circle().strokeBorder(Theme.background, lineWidth: 3))
             Image(systemName: "camera.fill")
-                .font(.system(size: 13, weight: .semibold))
+                .font(Theme.font(14, .regular))
                 .foregroundStyle(.white)
         }
         .offset(x: 4, y: 4)
@@ -136,18 +136,18 @@ struct ProfileSettingsView: View {
     private var usernameSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("USERNAME")
-                .font(.system(size: 11, weight: .bold))
+                .font(Theme.font(12))
                 .foregroundStyle(Theme.textSecondary)
                 .tracking(0.8)
 
             HStack(spacing: 12) {
                 Image(systemName: "at")
-                    .font(.system(size: 15, weight: .medium))
+                    .font(Theme.font(16, .regular))
                     .foregroundStyle(Theme.textSecondary)
                     .frame(width: 18)
 
                 TextField("username", text: $viewModel.username)
-                    .font(.system(size: 16))
+                    .font(Theme.font(17))
                     .foregroundStyle(Theme.textPrimary)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
@@ -156,7 +156,7 @@ struct ProfileSettingsView: View {
 
                 // Character count
                 Text("\(viewModel.charCount)/20")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(Theme.font(13, .regular))
                     .foregroundStyle(viewModel.charCount > 20
                                      ? Color(hex: "FF4444")
                                      : Theme.textSecondary)
@@ -167,7 +167,7 @@ struct ProfileSettingsView: View {
                     Image(systemName: viewModel.usernameError == nil
                           ? "checkmark.circle.fill"
                           : "xmark.circle.fill")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(Theme.font(17, .regular))
                         .foregroundStyle(viewModel.usernameError == nil
                                          ? Color(hex: "4CAF50")
                                          : Color(hex: "FF4444"))
@@ -193,16 +193,16 @@ struct ProfileSettingsView: View {
             if let error = viewModel.usernameError {
                 HStack(spacing: 5) {
                     Image(systemName: "exclamationmark.circle")
-                        .font(.system(size: 11))
+                        .font(Theme.font(12))
                     Text(error)
-                        .font(.system(size: 12))
+                        .font(Theme.font(13))
                 }
                 .foregroundStyle(Color(hex: "FF4444"))
                 .transition(.move(edge: .top).combined(with: .opacity))
                 .animation(.spring(response: 0.25), value: viewModel.usernameError)
             } else {
                 Text("Letters, numbers, and underscores · 3–20 characters")
-                    .font(.system(size: 12))
+                    .font(Theme.font(13))
                     .foregroundStyle(Theme.textSecondary)
             }
         }
@@ -223,12 +223,12 @@ struct ProfileSettingsView: View {
                         ProgressView()
                             .tint(viewModel.canSave ? .white : Theme.textSecondary)
                         Text("Saving…")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(Theme.font(17, .regular))
                             .foregroundStyle(viewModel.canSave ? .white : Theme.textSecondary)
                     }
                 } else {
                     Text(viewModel.hasChanges ? "Save Changes" : "No Changes")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(Theme.font(17, .regular))
                         .foregroundStyle(viewModel.canSave ? .white : Theme.textSecondary)
                 }
             }

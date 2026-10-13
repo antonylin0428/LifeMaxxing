@@ -36,13 +36,13 @@ struct CommunitySettingsView: View {
                     Text("Community Goals")
                 } footer: {
                     Text("Goals appear in order. Drag to reorder. Members complete each goal daily.")
-                        .font(.system(size: 12))
+                        .font(Theme.font(13))
                 }
 
                 if let err = viewModel.saveError {
                     Section {
                         Text(err)
-                            .font(.system(size: 13))
+                            .font(Theme.font(14))
                             .foregroundStyle(Color(hex: "FF4444"))
                     }
                 }
@@ -59,7 +59,7 @@ struct CommunitySettingsView: View {
                     ProgressView()
                 } else {
                     Button("Save") { Task { await viewModel.save() } }
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(Theme.font(16, .regular))
                         .foregroundStyle(Theme.ink)
                 }
             }
@@ -88,22 +88,22 @@ struct CommunitySettingsView: View {
         Button { editingGoal = goal } label: {
             HStack(spacing: 12) {
                 Text(goal.emoji)
-                    .font(.system(size: 24))
+                    .font(Theme.font(25))
                     .frame(width: 36)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(goal.name.isEmpty ? "Unnamed Goal" : goal.name)
-                        .font(.system(size: 15, weight: .medium))
+                        .font(Theme.font(16, .regular))
                         .foregroundStyle(goal.name.isEmpty ? Theme.textSecondary : Theme.textPrimary)
 
                     HStack(spacing: 4) {
                         Image(systemName: goal.trackingType == .photo ? "camera.fill"
                               : goal.trackingType == .text ? "text.bubble.fill"
                               : "camera.badge.plus")
-                            .font(.system(size: 10))
+                            .font(Theme.font(11))
                             .foregroundStyle(Theme.textSecondary)
                         Text(goal.trackingType.displayName)
-                            .font(.system(size: 11))
+                            .font(Theme.font(12))
                             .foregroundStyle(Theme.textSecondary)
                     }
                 }
@@ -111,7 +111,7 @@ struct CommunitySettingsView: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(Theme.font(13, .regular))
                     .foregroundStyle(Theme.textSecondary.opacity(0.4))
             }
         }

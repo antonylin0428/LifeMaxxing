@@ -40,7 +40,7 @@ struct CreateEditGoalView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { onSave(draft) }
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(Theme.font(16, .regular))
                         .foregroundStyle(Theme.ink)
                         .disabled(draft.name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
@@ -58,7 +58,7 @@ struct CreateEditGoalView: View {
             VStack(spacing: 12) {
                 // Large preview
                 Text(draft.emoji)
-                    .font(.system(size: 52))
+                    .font(Theme.font(53))
                     .frame(maxWidth: .infinity)
                     .frame(height: 80)
                     .background(Theme.surface)
@@ -71,7 +71,7 @@ struct CreateEditGoalView: View {
                             draft.emoji = emoji
                         } label: {
                             Text(emoji)
-                                .font(.system(size: 22))
+                                .font(Theme.font(23))
                                 .frame(width: 36, height: 36)
                                 .background(draft.emoji == emoji
                                             ? Theme.accentGreen.opacity(0.2)
@@ -94,7 +94,7 @@ struct CreateEditGoalView: View {
         VStack(alignment: .leading, spacing: 10) {
             label("Goal Name")
             TextField("e.g. Morning Devotions", text: $draft.name)
-                .font(.system(size: 16))
+                .font(Theme.font(17))
                 .padding(14)
                 .background(Theme.surface)
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -109,18 +109,18 @@ struct CreateEditGoalView: View {
             HStack {
                 label("Description")
                 Text("(optional)")
-                    .font(.system(size: 12))
+                    .font(Theme.font(13))
                     .foregroundStyle(Theme.textSecondary)
             }
             ZStack(alignment: .topLeading) {
                 if draft.description.isEmpty {
                     Text("Describe what members should do…")
-                        .font(.system(size: 14))
+                        .font(Theme.font(15))
                         .foregroundStyle(Theme.textSecondary.opacity(0.6))
                         .padding(.horizontal, 14).padding(.top, 12)
                 }
                 TextEditor(text: $draft.description)
-                    .font(.system(size: 14))
+                    .font(Theme.font(15))
                     .frame(height: 80)
                     .padding(.horizontal, 10).padding(.vertical, 8)
                     .scrollContentBackground(.hidden)
@@ -144,16 +144,16 @@ struct CreateEditGoalView: View {
                             Image(systemName: type == .photo ? "camera.fill"
                                   : type == .text ? "text.bubble.fill"
                                   : "camera.badge.plus")
-                                .font(.system(size: 18))
+                                .font(Theme.font(19))
                                 .foregroundStyle(draft.trackingType == type ? Theme.accentGreen : Theme.textSecondary)
                                 .frame(width: 28)
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(type.displayName)
-                                    .font(.system(size: 15, weight: .medium))
+                                    .font(Theme.font(16, .regular))
                                     .foregroundStyle(Theme.textPrimary)
                                 Text(trackingTypeSubtitle(type))
-                                    .font(.system(size: 12))
+                                    .font(Theme.font(13))
                                     .foregroundStyle(Theme.textSecondary)
                             }
 
@@ -192,7 +192,7 @@ struct CreateEditGoalView: View {
 
     private func label(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 13, weight: .semibold))
+            .font(Theme.font(14, .regular))
             .foregroundStyle(Theme.textSecondary)
     }
 }

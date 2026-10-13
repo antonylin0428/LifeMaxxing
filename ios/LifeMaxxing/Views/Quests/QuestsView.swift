@@ -72,14 +72,14 @@ struct QuestsView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 12, weight: .bold))
+                    .font(Theme.font(13))
                     .foregroundStyle(iconColor)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(title)
-                        .font(.system(size: 13, weight: .bold))
+                        .font(Theme.font(14))
                         .foregroundStyle(Theme.textPrimary)
                     Text(subtitle)
-                        .font(.system(size: 11))
+                        .font(Theme.font(12))
                         .foregroundStyle(Theme.textSecondary)
                 }
             }
@@ -103,28 +103,28 @@ private struct QuestCard: View {
     let onComplete: () -> Void
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 14) {
             ZStack {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(isDone ? Theme.surfaceSecondary : category.categoryId.color)
-                    .frame(width: 56, height: 56)
+                    .frame(width: 46, height: 46)
                 Image(systemName: category.categoryId.systemImageName)
-                    .font(.system(size: 24, weight: .medium))
+                    .font(Theme.font(20, .regular))
                     .foregroundStyle(isDone ? Theme.textSecondary : Theme.ink)
             }
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(category.categoryId.displayName)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(Theme.font(15, .regular))
                     .foregroundStyle(isDone ? Theme.textSecondary : Theme.textPrimary)
                 HStack(spacing: 4) {
                     if !isDone && category.currentStreak > 0 {
                         Image(systemName: "flame.fill")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(.orange)
+                            .font(Theme.font(10))
+                            .foregroundStyle(Theme.accent)
                     }
                     Text(isDone ? "Done today ✓" : "Streak: \(category.currentStreak) days")
-                        .font(.system(size: 13))
+                        .font(Theme.font(12))
                         .foregroundStyle(Theme.textSecondary)
                 }
             }
@@ -133,23 +133,23 @@ private struct QuestCard: View {
 
             if isDone {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 30))
+                    .font(Theme.font(25))
                     .foregroundStyle(Theme.accentGreen)
             } else {
                 Button(action: onComplete) {
                     Text("Log it")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(Theme.font(13, .regular))
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 9)
-                        .background(Capsule().fill(Theme.ink))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 7)
+                        .background(Capsule().fill(Theme.accent))
                 }
             }
         }
-        .padding(16)
+        .padding(12)
         .background(Theme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .shadow(color: .black.opacity(isDone ? 0.02 : 0.06), radius: 12, x: 0, y: 4)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: .black.opacity(isDone ? 0.02 : 0.05), radius: 8, x: 0, y: 3)
         .opacity(isDone ? 0.7 : 1)
     }
 }

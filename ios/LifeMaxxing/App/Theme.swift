@@ -13,15 +13,32 @@ extension Color {
 }
 
 enum Theme {
-    static let background       = Color(hex: "F6F5F2")
+    static let background       = Color(hex: "FAF0E8")
     static let surface          = Color.white
-    static let surfaceSecondary = Color(hex: "EEEDE9")
+    static let surfaceSecondary = Color(hex: "F0E4D4")
     static let textPrimary      = Color(hex: "1A1A1A")
     static let textSecondary    = Color(hex: "8A8A8A")
-    static let border           = Color(hex: "E5E4E0")
-    static let accentGreen      = Color(hex: "8FBA7A")
-    static let highlight        = Color(hex: "C2F542")
+    static let border           = Color(hex: "E8DDD0")
+    static let accent           = Color(hex: "E8916A")
+    static let accentGreen      = Color(hex: "E8916A")
+    static let highlight        = Color(hex: "E8916A")
     static let ink              = Color(hex: "1A1A1A")
+
+    static func font(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
+        let name: String
+        switch weight {
+        case .ultraLight: name = "AvenirNext-UltraLight"
+        case .thin:       name = "AvenirNext-UltraLight"
+        case .light:      name = "AvenirNext-Regular"
+        case .medium:     name = "AvenirNext-Medium"
+        case .semibold:   name = "AvenirNext-DemiBold"
+        case .bold:       name = "AvenirNext-Bold"
+        case .heavy:      name = "AvenirNext-Heavy"
+        case .black:      name = "AvenirNext-Heavy"
+        default:          name = "AvenirNext-Regular"
+        }
+        return .custom(name, size: size)
+    }
 }
 
 struct CardStyle: ViewModifier {

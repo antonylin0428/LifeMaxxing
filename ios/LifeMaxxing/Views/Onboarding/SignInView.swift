@@ -12,10 +12,10 @@ struct SignInView: View {
                 VStack(alignment: .leading, spacing: 32) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Welcome back")
-                            .font(.system(size: 28, weight: .bold))
+                            .font(Theme.font(29))
                             .foregroundStyle(Theme.textPrimary)
                         Text("Sign in to continue your journey")
-                            .font(.system(size: 15))
+                            .font(Theme.font(16))
                             .foregroundStyle(Theme.textSecondary)
                     }
                     .padding(.top, 8)

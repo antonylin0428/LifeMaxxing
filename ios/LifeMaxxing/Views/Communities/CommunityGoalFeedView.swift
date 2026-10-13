@@ -43,28 +43,28 @@ struct CommunityGoalFeedView: View {
     private var goalHeaderCard: some View {
         HStack(spacing: 14) {
             Text(viewModel.goal.emoji)
-                .font(.system(size: 36))
+                .font(Theme.font(37))
                 .frame(width: 60, height: 60)
                 .background(Theme.surface)
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(viewModel.goal.name)
-                    .font(.system(size: 18, weight: .bold))
+                    .font(Theme.font(19))
                     .foregroundStyle(Theme.textPrimary)
                 HStack(spacing: 6) {
                     Image(systemName: viewModel.goal.trackingType == .photo ? "camera.fill"
                           : viewModel.goal.trackingType == .text ? "text.bubble.fill"
                           : "camera.badge.plus")
-                        .font(.system(size: 11))
+                        .font(Theme.font(12))
                         .foregroundStyle(Theme.textSecondary)
                     Text(viewModel.goal.trackingType.displayName)
-                        .font(.system(size: 12))
+                        .font(Theme.font(13))
                         .foregroundStyle(Theme.textSecondary)
                 }
                 if let desc = viewModel.goal.description {
                     Text(desc)
-                        .font(.system(size: 12))
+                        .font(Theme.font(13))
                         .foregroundStyle(Theme.textSecondary)
                         .lineLimit(2)
                 }
@@ -83,9 +83,9 @@ struct CommunityGoalFeedView: View {
             Button { showCompletionSheet = true } label: {
                 HStack(spacing: 10) {
                     Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 18))
+                        .font(Theme.font(19))
                     Text("Complete Today's Goal")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(Theme.font(17, .regular))
                 }
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
@@ -97,14 +97,14 @@ struct CommunityGoalFeedView: View {
             Button { showCompletionSheet = true } label: {
                 HStack(spacing: 10) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 18))
+                        .font(Theme.font(19))
                         .foregroundStyle(Theme.accentGreen)
                     Text("Completed Today — Update?")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(Theme.font(16, .regular))
                         .foregroundStyle(Theme.textPrimary)
                     Spacer()
                     Image(systemName: "arrow.counterclockwise")
-                        .font(.system(size: 13))
+                        .font(Theme.font(14))
                         .foregroundStyle(Theme.textSecondary)
                 }
                 .padding(16)
@@ -124,7 +124,7 @@ struct CommunityGoalFeedView: View {
     private var feedSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Today's Completions")
-                .font(.system(size: 13, weight: .bold))
+                .font(Theme.font(14))
                 .foregroundStyle(Theme.textSecondary)
                 .textCase(.uppercase)
                 .tracking(0.8)
@@ -134,11 +134,11 @@ struct CommunityGoalFeedView: View {
             } else if viewModel.feedPosts.isEmpty {
                 VStack(spacing: 10) {
                     Image(systemName: "checkmark.circle")
-                        .font(.system(size: 32)).foregroundStyle(Theme.textSecondary.opacity(0.4))
+                        .font(Theme.font(33)).foregroundStyle(Theme.textSecondary.opacity(0.4))
                     Text("No completions yet today")
-                        .font(.system(size: 14)).foregroundStyle(Theme.textSecondary)
+                        .font(Theme.font(15)).foregroundStyle(Theme.textSecondary)
                     Text("Be the first!")
-                        .font(.system(size: 12)).foregroundStyle(Theme.textSecondary.opacity(0.7))
+                        .font(Theme.font(13)).foregroundStyle(Theme.textSecondary.opacity(0.7))
                 }
                 .frame(maxWidth: .infinity).padding(.vertical, 32)
                 .background(Theme.surface)
@@ -177,11 +177,11 @@ struct CommunityGoalFeedView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 6) {
                             Text(post.isMe ? "You" : post.username)
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(Theme.font(15, .regular))
                                 .foregroundStyle(Theme.textPrimary)
                             if post.isMe {
                                 Text("you")
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(Theme.font(11))
                                     .foregroundStyle(Theme.accentGreen)
                                     .padding(.horizontal, 6).padding(.vertical, 2)
                                     .background(Theme.accentGreen.opacity(0.12))
@@ -189,14 +189,14 @@ struct CommunityGoalFeedView: View {
                             }
                         }
                         Text(timeAgo(post.completedAt))
-                            .font(.system(size: 11)).foregroundStyle(Theme.textSecondary)
+                            .font(Theme.font(12)).foregroundStyle(Theme.textSecondary)
                     }
                     Spacer()
                 }
 
                 if let text = post.text, !text.isEmpty {
                     Text(text)
-                        .font(.system(size: 14))
+                        .font(Theme.font(15))
                         .foregroundStyle(Theme.textPrimary)
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -237,7 +237,7 @@ struct CommunityGoalFeedView: View {
         ZStack {
             Circle().fill(Color(hex: "C5B5F5").opacity(0.5))
             Text(String(username.prefix(1)).uppercased())
-                .font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.ink)
+                .font(Theme.font(15)).foregroundStyle(Theme.ink)
         }
     }
 
@@ -272,7 +272,7 @@ struct GoalCompletionSheet: View {
                     VStack(spacing: 20) {
                         if let err = viewModel.submitError {
                             Text(err)
-                                .font(.system(size: 13))
+                                .font(Theme.font(14))
                                 .foregroundStyle(Color(hex: "FF4444"))
                                 .padding(12)
                                 .frame(maxWidth: .infinity)
@@ -316,7 +316,7 @@ struct GoalCompletionSheet: View {
     private var photoSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Photo")
-                .font(.system(size: 13, weight: .bold))
+                .font(Theme.font(14))
                 .foregroundStyle(Theme.textSecondary)
                 .textCase(.uppercase)
                 .tracking(0.6)
@@ -338,10 +338,10 @@ struct GoalCompletionSheet: View {
                             .frame(maxWidth: .infinity).frame(height: 160)
                         VStack(spacing: 8) {
                             Image(systemName: "camera.fill")
-                                .font(.system(size: 28))
+                                .font(Theme.font(29))
                                 .foregroundStyle(Theme.textSecondary.opacity(0.5))
                             Text("Tap to add photo")
-                                .font(.system(size: 14))
+                                .font(Theme.font(15))
                                 .foregroundStyle(Theme.textSecondary)
                         }
                     }
@@ -355,25 +355,25 @@ struct GoalCompletionSheet: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("Message")
-                    .font(.system(size: 13, weight: .bold))
+                    .font(Theme.font(14))
                     .foregroundStyle(Theme.textSecondary)
                     .textCase(.uppercase)
                     .tracking(0.6)
                 Spacer()
                 Text("\(text.count)/500")
-                    .font(.system(size: 11))
+                    .font(Theme.font(12))
                     .foregroundStyle(text.count > 450 ? Color(hex: "FF4444") : Theme.textSecondary)
             }
 
             ZStack(alignment: .topLeading) {
                 if text.isEmpty {
                     Text("Share your thoughts or takeaway…")
-                        .font(.system(size: 14))
+                        .font(Theme.font(15))
                         .foregroundStyle(Theme.textSecondary.opacity(0.6))
                         .padding(.horizontal, 14).padding(.top, 12)
                 }
                 TextEditor(text: $text)
-                    .font(.system(size: 14))
+                    .font(Theme.font(15))
                     .frame(minHeight: 100, maxHeight: 180)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 8)
@@ -405,7 +405,7 @@ struct GoalCompletionSheet: View {
                     ProgressView().tint(.white)
                 } else {
                     Text(viewModel.goal.myCompletion == nil ? "Submit" : "Update")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(Theme.font(17, .regular))
                         .foregroundStyle(.white)
                 }
             }

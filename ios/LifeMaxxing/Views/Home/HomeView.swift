@@ -39,10 +39,10 @@ struct HomeView: View {
     private var headerInitialsCircle: some View {
         ZStack {
             Circle()
-                .fill(Color(hex: "E2E0DB"))
+                .fill(Theme.surfaceSecondary)
                 .frame(width: 46, height: 46)
             Text(String((viewModel.user?.username ?? "?").prefix(1)).uppercased())
-                .font(.system(size: 18, weight: .black))
+                .font(Theme.font(19))
                 .foregroundStyle(Theme.ink)
         }
     }
@@ -68,32 +68,30 @@ struct HomeView: View {
                 }
             }
 
-            Spacer()
-
-            VStack(spacing: 2) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text("Hello, \(viewModel.user?.username ?? "there")")
-                    .font(.system(size: 17, weight: .bold))
+                    .font(Theme.font(15))
                     .foregroundStyle(Theme.textPrimary)
                 Text(Self.todayLabel)
-                    .font(.system(size: 13, weight: .regular))
+                    .font(Theme.font(12))
                     .foregroundStyle(Theme.textSecondary)
             }
+            .padding(.leading, 10)
 
             Spacer()
 
             // Streak pill
             HStack(spacing: 4) {
                 Image(systemName: "flame.fill")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.orange)
+                    .font(Theme.font(12))
+                    .foregroundStyle(Theme.accent)
                 Text("\(viewModel.bestCurrentStreak)")
-                    .font(.system(size: 15, weight: .black))
+                    .font(Theme.font(14))
                     .foregroundStyle(Theme.textPrimary)
             }
             .frame(width: 46, height: 46)
-            .background(Theme.surface)
+            .background(Theme.accent.opacity(0.12))
             .clipShape(Circle())
-            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 3)
         }
     }
 
@@ -110,84 +108,104 @@ struct HomeView: View {
             return Double(min(max(totalXP - rank.xpRequired, 0), span)) / Double(span)
         }()
 
-        // Use overlay approach so the decorative circles don't inflate the ZStack frame
-        return RoundedRectangle(cornerRadius: 28, style: .continuous)
-            .fill(Color(hex: "1E1245"))
-            .frame(height: 272)
-            // Decorative blobs anchored to top-right
-            .overlay(alignment: .topTrailing) {
-                ZStack {
+        return ZStack(alignment: .bottomLeading) {
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(Theme.surface)
+
+            // Mountain illustration (top-right)
+            GeometryReader { geo in
+                ZStack(alignment: .topTrailing) {
+                    // Sun
                     Circle()
-                        .fill(Color(hex: "3D2299").opacity(0.85))
-                        .frame(width: 200, height: 200)
-                        .offset(x: 40, y: -55)
-                    Circle()
-                        .fill(Color(hex: "C2F542").opacity(0.18))
-                        .frame(width: 110, height: 110)
-                        .offset(x: 15, y: 55)
+                        .fill(Theme.accent.opacity(0.28))
+                        .frame(width: 70, height: 70)
+                        .offset(x: -20, y: 18)
+
+                    // Mountain canvas
+                    Canvas { ctx, size in
+                        var far = Path()
+                        far.move(to: CGPoint(x: 0, y: size.height))
+                        far.addLine(to: CGPoint(x: size.width * 0.28, y: size.height * 0.30))
+                        far.addLine(to: CGPoint(x: size.width * 0.55, y: size.height * 0.54))
+                        far.addLine(to: CGPoint(x: size.width * 0.78, y: size.height * 0.28))
+                        far.addLine(to: CGPoint(x: size.width, y: size.height * 0.52))
+                        far.addLine(to: CGPoint(x: size.width, y: size.height))
+                        far.closeSubpath()
+                        ctx.fill(far, with: .color(.black.opacity(0.04)))
+                        ctx.stroke(far, with: .color(.black.opacity(0.09)), lineWidth: 1.2)
+
+                        var near = Path()
+                        near.move(to: CGPoint(x: 0, y: size.height))
+                        near.addLine(to: CGPoint(x: size.width * 0.35, y: size.height * 0.55))
+                        near.addLine(to: CGPoint(x: size.width * 0.6, y: size.height * 0.72))
+                        near.addLine(to: CGPoint(x: size.width, y: size.height * 0.62))
+                        near.addLine(to: CGPoint(x: size.width, y: size.height))
+                        near.closeSubpath()
+                        ctx.fill(near, with: .color(Color(hex: "E8916A").opacity(0.10)))
+                    }
+                    .frame(width: geo.size.width * 0.62, height: 114)
+                    .offset(y: geo.size.height - 114)
                 }
-                .clipped()
             }
-            // Content anchored to bottom-left
-            .overlay(alignment: .bottomLeading) {
-                VStack(alignment: .leading, spacing: 14) {
-                    // Rank badge
-                    HStack(spacing: 5) {
-                        Image(systemName: "trophy.fill")
-                            .font(.system(size: 10, weight: .black))
-                        Text(rank.displayName.uppercased())
-                            .font(.system(size: 10, weight: .black))
-                            .tracking(0.5)
+            .allowsHitTesting(false)
+
+            // Content
+            VStack(alignment: .leading, spacing: 14) {
+                // Rank badge
+                HStack(spacing: 5) {
+                    Image(systemName: "trophy.fill")
+                        .font(Theme.font(11, .regular))
+                    Text(rank.displayName.uppercased())
+                        .font(Theme.font(11))
+                        .tracking(0.4)
+                        .lineLimit(1)
+                }
+                .foregroundStyle(Color(hex: "7A3C10"))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Theme.accent.opacity(0.18))
+                .clipShape(Capsule())
+
+                // Title
+                Text("Daily Goals")
+                    .font(Theme.font(33))
+                    .foregroundStyle(Theme.textPrimary)
+
+                // XP bar
+                VStack(alignment: .leading, spacing: 7) {
+                    HStack {
+                        Text("\(totalXP) XP total")
+                            .font(Theme.font(12))
+                            .foregroundStyle(Theme.textSecondary)
+                        Spacer()
+                        if let next {
+                            HStack(spacing: 3) {
+                                Text("→").foregroundStyle(Theme.accent)
+                                Text(next.displayName).foregroundStyle(Theme.textSecondary)
+                            }
+                            .font(Theme.font(12))
                             .lineLimit(1)
-                    }
-                    .foregroundStyle(Color(hex: "1E1245"))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color(hex: "C2F542"))
-                    .clipShape(Capsule())
-
-                    // Big type
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text("Daily")
-                            .font(.system(size: 46, weight: .black, design: .rounded))
-                            .foregroundStyle(.white)
-                        Text("Goals")
-                            .font(.system(size: 46, weight: .black, design: .rounded))
-                            .foregroundStyle(Color(hex: "C2F542"))
-                    }
-
-                    // XP bar
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("\(totalXP) XP total")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(.white.opacity(0.65))
-                            Spacer()
-                            if let next {
-                                Text("→ \(next.displayName)")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundStyle(.white.opacity(0.45))
-                                    .lineLimit(1)
-                            } else {
-                                Text("Max rank ✦")
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundStyle(Color(hex: "C2F542"))
-                            }
+                        } else {
+                            Text("Max rank ✦")
+                                .font(Theme.font(12))
+                                .foregroundStyle(Theme.accent)
                         }
-                        GeometryReader { geo in
-                            ZStack(alignment: .leading) {
-                                Capsule().fill(.white.opacity(0.12)).frame(height: 6)
-                                Capsule()
-                                    .fill(Color(hex: "C2F542"))
-                                    .frame(width: max(geo.size.width * CGFloat(progress), 8), height: 6)
-                            }
-                        }
-                        .frame(height: 6)
                     }
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(Theme.surfaceSecondary).frame(height: 6)
+                            Capsule()
+                                .fill(Theme.accent)
+                                .frame(width: max(geo.size.width * CGFloat(progress), 8), height: 6)
+                        }
+                    }
+                    .frame(height: 6)
                 }
-                .padding(24)
             }
-            .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+            .padding(24)
+        }
+        .frame(height: 252)
+        .shadow(color: .black.opacity(0.05), radius: 14, x: 0, y: 5)
     }
 
     // MARK: - Week Strip
@@ -205,15 +223,15 @@ struct HomeView: View {
 
                 VStack(spacing: 6) {
                     Text(abbr)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(isToday ? Theme.ink : Theme.textSecondary)
+                        .font(Theme.font(12, .regular))
+                        .foregroundStyle(isToday ? Theme.accent : Theme.textSecondary)
 
                     ZStack {
                         Circle()
-                            .fill(isToday ? Theme.ink : Color.clear)
+                            .fill(isToday ? Theme.accent : Color.clear)
                             .frame(width: 34, height: 34)
                         Text("\(num)")
-                            .font(.system(size: 14, weight: isToday ? .black : .regular))
+                            .font(.system(size: 14, weight: isToday ? .bold : .regular))
                             .foregroundStyle(isToday ? .white : Theme.textPrimary)
                     }
                 }
@@ -237,12 +255,22 @@ struct HomeView: View {
         let statMap = Dictionary(uniqueKeysWithValues: viewModel.categories.map { ($0.categoryId, $0) })
 
         return VStack(alignment: .leading, spacing: 14) {
-            Text("Today's Quests")
-                .font(.system(size: 24, weight: .black))
-                .foregroundStyle(Theme.textPrimary)
+            HStack {
+                Text("Today's Quests")
+                    .font(Theme.font(17))
+                    .foregroundStyle(Theme.textPrimary)
+                Spacer()
+            }
+            .overlay(alignment: .bottomLeading) {
+                Rectangle()
+                    .fill(Theme.accent)
+                    .frame(width: 32, height: 2)
+                    .offset(y: 4)
+            }
 
             mergedBentoGrid(ids, statMap: statMap)
         }
+        .padding(.top, 4)
     }
 
     private func mergedBentoGrid(_ ids: [CategoryId], statMap: [CategoryId: CategoryStat]) -> some View {
@@ -288,51 +316,78 @@ struct HomeView: View {
     private func questCardLarge(_ category: CategoryStat) -> some View {
         let done = viewModel.isCompletedToday(category)
 
-        return ZStack(alignment: .bottomLeading) {
-            // Background
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .fill(done ? category.categoryId.color.opacity(0.35) : category.categoryId.color)
-
-            // Watermark icon
-            Image(systemName: category.categoryId.systemImageName)
-                .font(.system(size: 110, weight: .black))
-                .foregroundStyle(.black.opacity(0.07))
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                .padding(.top, 10)
-                .padding(.trailing, 10)
-                .allowsHitTesting(false)
-
-            // Labels
-            VStack(alignment: .leading, spacing: 10) {
+        return HStack(spacing: 0) {
+            // Left content
+            VStack(alignment: .leading, spacing: 8) {
                 // Status pill
                 if done {
                     Label("Done today", systemImage: "checkmark.circle.fill")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(Theme.ink.opacity(0.65))
-                        .padding(.horizontal, 11)
-                        .padding(.vertical, 6)
+                        .font(Theme.font(12, .regular))
+                        .foregroundStyle(Theme.ink.opacity(0.6))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
                         .background(.white.opacity(0.55))
                         .clipShape(Capsule())
                 } else if category.currentStreak > 0 {
-                    Label("\(category.currentStreak) day streak", systemImage: "flame.fill")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(Theme.ink.opacity(0.65))
-                        .symbolRenderingMode(.palette)
-                        .foregroundStyle(.orange, Theme.ink.opacity(0.65))
-                        .padding(.horizontal, 11)
-                        .padding(.vertical, 6)
-                        .background(.white.opacity(0.55))
-                        .clipShape(Capsule())
+                    HStack(spacing: 4) {
+                        Image(systemName: "flame.fill")
+                            .foregroundStyle(Theme.accent)
+                        Text("\(category.currentStreak) day streak")
+                    }
+                    .font(Theme.font(12, .regular))
+                    .foregroundStyle(Theme.ink.opacity(0.6))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(.white.opacity(0.55))
+                    .clipShape(Capsule())
                 }
 
                 Text(category.categoryId.displayName)
-                    .font(.system(size: 36, weight: .black, design: .rounded))
+                    .font(Theme.font(23))
                     .foregroundStyle(Theme.ink)
-                    .opacity(done ? 0.45 : 1)
+                    .opacity(done ? 0.5 : 1)
+
+                Text(shortPrompt(category.categoryId))
+                    .font(Theme.font(13))
+                    .foregroundStyle(Theme.ink.opacity(0.55))
+                    .lineLimit(2)
             }
-            .padding(22)
+            .padding(16)
+
+            Spacer()
+
+            // Right: icon + arrow
+            VStack(alignment: .trailing, spacing: 8) {
+                Image(systemName: category.categoryId.systemImageName)
+                    .font(Theme.font(39, .regular))
+                    .foregroundStyle(.black.opacity(0.12))
+
+                ZStack {
+                    Circle()
+                        .fill(.white.opacity(0.65))
+                        .frame(width: 30, height: 30)
+                    Image(systemName: done ? "checkmark" : "arrow.right")
+                        .font(Theme.font(12, .regular))
+                        .foregroundStyle(Theme.ink.opacity(0.6))
+                }
+            }
+            .padding(.trailing, 16)
+            .padding(.vertical, 16)
         }
-        .frame(height: 172)
+        .frame(height: 140)
+        .background(done ? category.categoryId.color.opacity(0.4) : category.categoryId.color)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+    }
+
+    private func shortPrompt(_ cat: CategoryId) -> String {
+        switch cat {
+        case .fitness:          return "Complete your workout for today."
+        case .screenDiscipline: return "Stay off social media and be present."
+        case .focus:            return "Put in deep, focused work or study."
+        case .personalGoals:    return "Make progress on one personal goal."
+        case .reflection:       return "Journal, meditate, or reflect today."
+        case .spiritual:        return "Engage in prayer or spiritual practice."
+        }
     }
 
     private func questCardSmall(_ category: CategoryStat) -> some View {
@@ -340,74 +395,83 @@ struct HomeView: View {
 
         return ZStack(alignment: .bottomLeading) {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(done ? category.categoryId.color.opacity(0.35) : category.categoryId.color)
+                .fill(done ? category.categoryId.color.opacity(0.4) : category.categoryId.color)
 
             Image(systemName: category.categoryId.systemImageName)
-                .font(.system(size: 60, weight: .black))
-                .foregroundStyle(.black.opacity(0.07))
+                .font(Theme.font(41, .regular))
+                .foregroundStyle(.black.opacity(0.10))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                .padding(.top, 8)
-                .padding(.trailing, 8)
+                .padding(.top, 10)
+                .padding(.trailing, 10)
                 .allowsHitTesting(false)
 
-            VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: 4) {
                 if done {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundStyle(Theme.ink.opacity(0.5))
+                        .font(Theme.font(14, .regular))
+                        .foregroundStyle(Theme.ink.opacity(0.45))
                 }
                 Text(category.categoryId.displayName)
-                    .font(.system(size: 18, weight: .black, design: .rounded))
+                    .font(Theme.font(15))
                     .foregroundStyle(Theme.ink)
-                    .opacity(done ? 0.45 : 1)
+                    .opacity(done ? 0.5 : 1)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(14)
+            .padding(12)
         }
-        .frame(height: 130)
+        .frame(height: 114)
     }
 
     // Local card variants (no CategoryStat, just CategoryId)
     private func localCardLarge(_ cat: CategoryId) -> some View {
-        ZStack(alignment: .bottomLeading) {
-            RoundedRectangle(cornerRadius: 26, style: .continuous).fill(cat.color)
-            Image(systemName: cat.systemImageName)
-                .font(.system(size: 110, weight: .black))
-                .foregroundStyle(.black.opacity(0.07))
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                .padding(.top, 10).padding(.trailing, 10)
-                .allowsHitTesting(false)
+        HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(cat.displayName)
-                    .font(.system(size: 36, weight: .black, design: .rounded))
+                    .font(Theme.font(23))
                     .foregroundStyle(Theme.ink)
-                Text("Tap to log")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Theme.ink.opacity(0.5))
+                Text(shortPrompt(cat))
+                    .font(Theme.font(13))
+                    .foregroundStyle(Theme.ink.opacity(0.55))
+                    .lineLimit(2)
             }
-            .padding(22)
+            .padding(16)
+            Spacer()
+            VStack(alignment: .trailing, spacing: 8) {
+                Image(systemName: cat.systemImageName)
+                    .font(Theme.font(39, .regular))
+                    .foregroundStyle(.black.opacity(0.12))
+                ZStack {
+                    Circle().fill(.white.opacity(0.65)).frame(width: 30, height: 30)
+                    Image(systemName: "arrow.right")
+                        .font(Theme.font(12, .regular))
+                        .foregroundStyle(Theme.ink.opacity(0.6))
+                }
+            }
+            .padding(.trailing, 16).padding(.vertical, 16)
         }
-        .frame(height: 172)
+        .frame(height: 140)
+        .background(cat.color)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 
     private func localCardSmall(_ cat: CategoryId) -> some View {
         ZStack(alignment: .bottomLeading) {
             RoundedRectangle(cornerRadius: 22, style: .continuous).fill(cat.color)
             Image(systemName: cat.systemImageName)
-                .font(.system(size: 60, weight: .black))
-                .foregroundStyle(.black.opacity(0.07))
+                .font(Theme.font(41, .regular))
+                .foregroundStyle(.black.opacity(0.10))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                .padding(8)
+                .padding(10)
                 .allowsHitTesting(false)
             Text(cat.displayName)
-                .font(.system(size: 18, weight: .black, design: .rounded))
+                .font(Theme.font(15))
                 .foregroundStyle(Theme.ink)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(14)
+                .padding(12)
         }
-        .frame(height: 130)
+        .frame(height: 114)
     }
 
     private var emptyQuestState: some View {
@@ -417,10 +481,10 @@ struct HomeView: View {
                 .frame(height: 130)
             VStack(spacing: 8) {
                 Image(systemName: "moon.zzz.fill")
-                    .font(.system(size: 28))
+                    .font(Theme.font(29))
                     .foregroundStyle(Theme.textSecondary)
                 Text("No quests loaded")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(Theme.font(16, .regular))
                     .foregroundStyle(Theme.textSecondary)
             }
         }
@@ -434,28 +498,28 @@ struct HomeView: View {
         return VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Text("Achievements")
-                    .font(.system(size: 24, weight: .black))
+                    .font(Theme.font(17))
                     .foregroundStyle(Theme.textPrimary)
                 Spacer()
                 Text("\(unlockedCount)/\(viewModel.achievements.count)")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(Theme.font(12, .regular))
                     .foregroundStyle(Theme.textSecondary)
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
+                HStack(spacing: 10) {
                     ForEach(viewModel.achievements) { achievement in
-                        VStack(spacing: 9) {
+                        VStack(spacing: 6) {
                             ZStack {
-                                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
                                     .fill(achievement.isUnlocked
                                           ? Color(hex: "FFE07A")
                                           : Theme.surface)
-                                    .frame(width: 64, height: 64)
-                                    .shadow(color: .black.opacity(achievement.isUnlocked ? 0.08 : 0.04),
-                                            radius: 8, x: 0, y: 3)
+                                    .frame(width: 52, height: 52)
+                                    .shadow(color: .black.opacity(achievement.isUnlocked ? 0.07 : 0.03),
+                                            radius: 6, x: 0, y: 2)
                                 Image(systemName: achievement.iconName)
-                                    .font(.system(size: 26, weight: .semibold))
+                                    .font(Theme.font(21, .regular))
                                     .foregroundStyle(achievement.isUnlocked
                                                      ? Color(hex: "7A5C00")
                                                      : Theme.textSecondary)
@@ -463,11 +527,11 @@ struct HomeView: View {
                             .opacity(achievement.isUnlocked ? 1 : 0.38)
 
                             Text(achievement.title)
-                                .font(.system(size: 10, weight: .medium))
+                                .font(Theme.font(10, .regular))
                                 .foregroundStyle(Theme.textSecondary)
                                 .multilineTextAlignment(.center)
                                 .lineLimit(2)
-                                .frame(width: 64)
+                                .frame(width: 52)
                         }
                     }
                 }

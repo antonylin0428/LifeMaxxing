@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct CategorySetupView: View {
+    @Environment(AppState.self) private var appState
     @State private var enabledOptional: Set<CategoryId> = []
     @State private var errorMessage: String?
 
@@ -48,6 +49,11 @@ struct CategorySetupView: View {
             }
         }
         .navigationTitle("Categories")
+        .task {
+            if let raw = UserDefaults.standard.stringArray(forKey: "selectedCategoryIds") {
+                enabledOptional = Set(raw.compactMap { CategoryId(rawValue: $0) }.filter { $0.isOptional })
+            }
+        }
     }
 
     private func categoryRow(category: CategoryId, isEnabled: Bool, isToggleable: Bool) -> some View {
@@ -57,16 +63,16 @@ struct CategorySetupView: View {
                     .fill(isEnabled ? category.color.opacity(0.7) : Theme.surfaceSecondary)
                     .frame(width: 40, height: 40)
                 Image(systemName: category.systemImageName)
-                    .font(.system(size: 17, weight: .medium))
+                    .font(Theme.font(18, .regular))
                     .foregroundStyle(isEnabled ? Theme.ink : Theme.textSecondary)
             }
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(category.displayName)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(Theme.font(16, .regular))
                     .foregroundStyle(Theme.textPrimary)
                 Text(isToggleable ? "Optional" : "Required")
-                    .font(.system(size: 11))
+                    .font(Theme.font(12))
                     .foregroundStyle(Theme.textSecondary)
             }
 
@@ -79,7 +85,7 @@ struct CategorySetupView: View {
             } else {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(Theme.accentGreen)
-                    .font(.system(size: 20))
+                    .font(Theme.font(21))
             }
         }
         .padding(14)
@@ -93,6 +99,10 @@ struct CategorySetupView: View {
             get: { enabledOptional.contains(category) },
             set: { isOn in
                 if isOn { enabledOptional.insert(category) } else { enabledOptional.remove(category) }
+                // Sync to AppState (updates HomeView immediately) and UserDefaults (persistence)
+                let selectedOptional = CategoryId.allCases.filter { $0.isOptional && enabledOptional.contains($0) }
+                appState.localCategoryIds = CategoryId.allCases.filter { !$0.isOptional } + selectedOptional
+                UserDefaults.standard.set(selectedOptional.map(\.rawValue), forKey: "selectedCategoryIds")
                 Task {
                     do {
                         try await ProfileAPI.shared.setCategoryEnabled(category, enabled: isOn)

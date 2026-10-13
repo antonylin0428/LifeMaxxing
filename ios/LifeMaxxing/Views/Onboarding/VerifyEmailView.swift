@@ -17,16 +17,16 @@ struct VerifyEmailView: View {
                                 .fill(Color(hex: "B0E8AC").opacity(0.5))
                                 .frame(width: 64, height: 64)
                             Image(systemName: "envelope.badge.fill")
-                                .font(.system(size: 28, weight: .medium))
+                                .font(Theme.font(29, .regular))
                                 .foregroundStyle(Color(hex: "2A8A28"))
                         }
                         .padding(.bottom, 4)
 
                         Text("Check your email")
-                            .font(.system(size: 28, weight: .bold))
+                            .font(Theme.font(29))
                             .foregroundStyle(Theme.textPrimary)
                         Text("Enter the code sent to **\(viewModel.pendingVerificationEmail ?? "your email")**")
-                            .font(.system(size: 15))
+                            .font(Theme.font(16))
                             .foregroundStyle(Theme.textSecondary)
                     }
                     .padding(.top, 8)
@@ -54,7 +54,7 @@ struct VerifyEmailView: View {
                         Button("Use a Different Email") {
                             viewModel.cancelVerification()
                         }
-                        .font(.system(size: 14, weight: .medium))
+                        .font(Theme.font(15, .regular))
                         .foregroundStyle(Color(hex: "FF4444"))
                         .frame(maxWidth: .infinity)
                     }

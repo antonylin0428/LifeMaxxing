@@ -22,7 +22,7 @@ struct UserProfileView: View {
                 content(profile: profile)
             } else if let err = viewModel.errorMessage {
                 Text(err)
-                    .font(.system(size: 14))
+                    .font(Theme.font(15))
                     .foregroundStyle(Theme.textSecondary)
                     .padding(20)
             }
@@ -55,14 +55,14 @@ struct UserProfileView: View {
             avatarView(profile: profile)
 
             Text(profile.username)
-                .font(.system(size: 22, weight: .bold))
+                .font(Theme.font(23))
                 .foregroundStyle(Theme.textPrimary)
 
             HStack(spacing: 6) {
                 Image(systemName: "trophy.fill")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(Theme.font(12, .regular))
                 Text(profile.rank.displayName)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(Theme.font(14, .regular))
             }
             .foregroundStyle(Color(hex: "7A5C00"))
             .padding(.horizontal, 14)
@@ -72,10 +72,10 @@ struct UserProfileView: View {
 
             HStack(spacing: 6) {
                 Image(systemName: "bolt.fill")
-                    .font(.system(size: 11))
+                    .font(Theme.font(12))
                     .foregroundStyle(Color(hex: "C5B5F5"))
                 Text("\(profile.totalXP) XP")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(Theme.font(15, .regular))
                     .foregroundStyle(Theme.textPrimary)
             }
         }
@@ -105,7 +105,7 @@ struct UserProfileView: View {
         ZStack {
             Circle().fill(Color(hex: "E8E8E4")).frame(width: 88, height: 88)
             Text(String(username.prefix(1)).uppercased())
-                .font(.system(size: 34, weight: .bold))
+                .font(Theme.font(35))
                 .foregroundStyle(Theme.textPrimary)
         }
     }
@@ -131,7 +131,7 @@ struct UserProfileView: View {
                 Spacer()
                 if let date {
                     Text(date)
-                        .font(.system(size: 12))
+                        .font(Theme.font(13))
                         .foregroundStyle(Theme.textSecondary)
                 }
             }
@@ -165,7 +165,7 @@ struct AchievementsGrid: View {
     var body: some View {
         if achievements.isEmpty {
             Text("No achievements yet")
-                .font(.system(size: 13))
+                .font(Theme.font(14))
                 .foregroundStyle(Theme.textSecondary)
                 .padding(.vertical, 12)
                 .frame(maxWidth: .infinity)
@@ -193,13 +193,13 @@ struct AchievementBadge: View {
                           : Theme.surfaceSecondary)
                     .frame(width: 56, height: 56)
                 Image(systemName: achievement.iconName)
-                    .font(.system(size: 22, weight: .semibold))
+                    .font(Theme.font(23, .regular))
                     .foregroundStyle(achievement.isUnlocked
                                      ? Color(hex: "7A5C00")
                                      : Theme.textSecondary.opacity(0.4))
             }
             Text(achievement.title)
-                .font(.system(size: 10, weight: .medium))
+                .font(Theme.font(11, .regular))
                 .foregroundStyle(achievement.isUnlocked ? Theme.textPrimary : Theme.textSecondary.opacity(0.5))
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
@@ -228,7 +228,7 @@ struct AchievementDetailSheet: View {
                           : Theme.surfaceSecondary)
                     .frame(width: 100, height: 100)
                 Image(systemName: achievement.iconName)
-                    .font(.system(size: 44, weight: .semibold))
+                    .font(Theme.font(45, .regular))
                     .foregroundStyle(achievement.isUnlocked
                                      ? Color(hex: "7A5C00")
                                      : Theme.textSecondary.opacity(0.4))
@@ -236,11 +236,11 @@ struct AchievementDetailSheet: View {
 
             VStack(spacing: 10) {
                 Text(achievement.title)
-                    .font(.system(size: 22, weight: .bold))
+                    .font(Theme.font(23))
                     .foregroundStyle(Theme.textPrimary)
 
                 Text(achievement.description)
-                    .font(.system(size: 15))
+                    .font(Theme.font(16))
                     .foregroundStyle(Theme.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
@@ -251,7 +251,7 @@ struct AchievementDetailSheet: View {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(Theme.accentGreen)
                     Text("Unlocked")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(Theme.font(15, .regular))
                         .foregroundStyle(Theme.accentGreen)
                 }
                 .padding(.horizontal, 20)
@@ -263,7 +263,7 @@ struct AchievementDetailSheet: View {
                     Image(systemName: "lock.fill")
                         .foregroundStyle(Theme.textSecondary)
                     Text("Locked")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(Theme.font(15, .regular))
                         .foregroundStyle(Theme.textSecondary)
                 }
                 .padding(.horizontal, 20)

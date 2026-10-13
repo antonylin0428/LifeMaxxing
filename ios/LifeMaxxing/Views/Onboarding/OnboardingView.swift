@@ -63,17 +63,17 @@ struct OnboardingView: View {
 
             VStack(spacing: 10) {
                 Text("Welcome to")
-                    .font(.system(size: 20, weight: .medium))
+                    .font(Theme.font(21, .regular))
                     .foregroundStyle(Theme.textSecondary)
                 Text("LifeMaxxing")
-                    .font(.system(size: 46, weight: .black, design: .rounded))
+                    .font(Theme.font(47))
                     .foregroundStyle(Theme.ink)
             }
 
             Spacer().frame(height: 18)
 
             Text("Build daily habits. Earn XP.\nLevel up your life.")
-                .font(.system(size: 16))
+                .font(Theme.font(17))
                 .foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
@@ -89,7 +89,7 @@ struct OnboardingView: View {
             Button("Already have an account? Skip") {
                 appState.hasCompletedOnboarding = true
             }
-            .font(.system(size: 14, weight: .medium))
+            .font(Theme.font(15, .regular))
             .foregroundStyle(Theme.textSecondary)
             .padding(.top, 16)
             .padding(.bottom, 56)
@@ -104,7 +104,7 @@ struct OnboardingView: View {
                 .frame(width: 82, height: 82)
                 .shadow(color: cat.color.opacity(0.45), radius: 10, x: 0, y: 5)
             Image(systemName: cat.systemImageName)
-                .font(.system(size: 30, weight: .semibold))
+                .font(Theme.font(31, .regular))
                 .foregroundStyle(Theme.ink.opacity(0.7))
         }
     }
@@ -115,10 +115,10 @@ struct OnboardingView: View {
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Pick your goals")
-                    .font(.system(size: 34, weight: .black, design: .rounded))
+                    .font(Theme.font(35))
                     .foregroundStyle(Theme.ink)
                 Text("Required categories are always on.\nTap any optional one to add it.")
-                    .font(.system(size: 14))
+                    .font(Theme.font(15))
                     .foregroundStyle(Theme.textSecondary)
                     .lineSpacing(2)
             }
@@ -152,7 +152,7 @@ struct OnboardingView: View {
 
             VStack(spacing: 10) {
                 Text("\(allSelected.count) of \(CategoryId.allCases.count) categories selected")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(Theme.font(14, .regular))
                     .foregroundStyle(Theme.textSecondary)
 
                 Button("Continue") {
@@ -175,7 +175,7 @@ struct OnboardingView: View {
                     .fill(isSelected ? cat.color : cat.color.opacity(0.22))
 
                 Image(systemName: cat.systemImageName)
-                    .font(.system(size: 58, weight: .black))
+                    .font(Theme.font(59))
                     .foregroundStyle(.black.opacity(0.07))
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                     .padding(8)
@@ -183,11 +183,11 @@ struct OnboardingView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(cat.displayName)
-                        .font(.system(size: 17, weight: .black, design: .rounded))
+                        .font(Theme.font(18))
                         .foregroundStyle(Theme.ink)
                         .lineLimit(2)
                     Text(isRequired ? "Required" : "Optional")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(Theme.font(12, .regular))
                         .foregroundStyle(Theme.ink.opacity(0.45))
                 }
                 .padding(14)
@@ -198,12 +198,12 @@ struct OnboardingView: View {
             Group {
                 if isRequired {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 22))
+                        .font(Theme.font(23))
                         .foregroundStyle(Theme.accentGreen)
                         .background(Circle().fill(.white).padding(4))
                 } else if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 22))
+                        .font(Theme.font(23))
                         .foregroundStyle(Theme.ink)
                         .background(Circle().fill(.white).padding(4))
                 } else {
@@ -230,7 +230,7 @@ struct OnboardingView: View {
                     .frame(width: 104, height: 104)
                     .shadow(color: Color(hex: "C2F542").opacity(0.45), radius: 24, x: 0, y: 10)
                 Image(systemName: "checkmark")
-                    .font(.system(size: 46, weight: .black))
+                    .font(Theme.font(47))
                     .foregroundStyle(Theme.ink)
             }
 
@@ -238,10 +238,10 @@ struct OnboardingView: View {
 
             VStack(spacing: 10) {
                 Text("You're all set!")
-                    .font(.system(size: 36, weight: .black, design: .rounded))
+                    .font(Theme.font(37))
                     .foregroundStyle(Theme.ink)
                 Text("Your daily quests are ready:")
-                    .font(.system(size: 15))
+                    .font(Theme.font(16))
                     .foregroundStyle(Theme.textSecondary)
             }
 
@@ -256,15 +256,15 @@ struct OnboardingView: View {
                                 .fill(cat.color)
                                 .frame(width: 34, height: 34)
                             Image(systemName: cat.systemImageName)
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(Theme.font(15, .regular))
                                 .foregroundStyle(Theme.ink.opacity(0.7))
                         }
                         Text(cat.displayName)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(Theme.font(16, .regular))
                             .foregroundStyle(Theme.textPrimary)
                         Spacer()
                         Image(systemName: "checkmark")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(Theme.font(13))
                             .foregroundStyle(Theme.accentGreen)
                     }
                     .padding(.horizontal, 16)

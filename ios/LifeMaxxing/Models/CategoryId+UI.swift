@@ -20,12 +20,12 @@ extension CategoryId {
 
     var color: Color {
         switch self {
-        case .fitness:          return Color(hex: "FFE07A")
-        case .screenDiscipline: return Color(hex: "A8D4F5")
-        case .focus:            return Color(hex: "C5B5F5")
-        case .personalGoals:    return Color(hex: "B0E8AC")
-        case .reflection:       return Color(hex: "F5B0CC")
-        case .spiritual:        return Color(hex: "F5D2A8")
+        case .fitness:          return Color(hex: "F7C8A8").opacity(0.75)
+        case .screenDiscipline: return Color(hex: "B4C8E0").opacity(0.75)
+        case .focus:            return Color(hex: "C0B8E0").opacity(0.75)
+        case .personalGoals:    return Color(hex: "B4D4A8").opacity(0.75)
+        case .reflection:       return Color(hex: "E0B4C4").opacity(0.75)
+        case .spiritual:        return Color(hex: "E8D4A8").opacity(0.75)
         }
     }
 }

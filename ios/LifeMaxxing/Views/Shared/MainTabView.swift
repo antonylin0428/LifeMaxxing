@@ -44,29 +44,29 @@ private struct LMTabBar: View {
                 } label: {
                     ZStack {
                         if selectedTab == index {
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(.white)
-                                .frame(width: 52, height: 44)
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(Theme.accent.opacity(0.15))
+                                .frame(width: 48, height: 40)
                         }
                         Image(systemName: items[index])
-                            .font(.system(size: 20, weight: .semibold))
+                            .font(.system(size: 19, weight: selectedTab == index ? .semibold : .regular))
                             .foregroundStyle(selectedTab == index
-                                             ? Color(hex: "1A1A1A")
-                                             : .white.opacity(0.55))
+                                             ? Theme.ink
+                                             : Color.gray.opacity(0.45))
                     }
                     .frame(maxWidth: .infinity)
-                    .frame(height: 56)
+                    .frame(height: 54)
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 10)
         .background(
             Capsule()
-                .fill(Color(hex: "1A1A1A"))
-                .shadow(color: .black.opacity(0.25), radius: 20, x: 0, y: 8)
+                .fill(Color.white)
+                .shadow(color: .black.opacity(0.08), radius: 16, x: 0, y: 4)
         )
-        .padding(.horizontal, 48)
+        .padding(.horizontal, 40)
         .padding(.bottom, 12)
     }
 }

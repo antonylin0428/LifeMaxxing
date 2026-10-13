@@ -41,16 +41,16 @@ struct AddFriendView: View {
                                 .frame(width: 50, height: 50)
                                 .overlay(
                                     Text(String(result.username.prefix(1)).uppercased())
-                                        .font(.system(size: 20, weight: .bold))
+                                        .font(Theme.font(21))
                                         .foregroundStyle(Theme.ink)
                                 )
 
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(result.username)
-                                    .font(.system(size: 16, weight: .semibold))
+                                    .font(Theme.font(17, .regular))
                                     .foregroundStyle(Theme.textPrimary)
                                 Text("LifeMaxxing user")
-                                    .font(.system(size: 12))
+                                    .font(Theme.font(13))
                                     .foregroundStyle(Theme.textSecondary)
                             }
 
@@ -62,7 +62,7 @@ struct AddFriendView: View {
                                     didSendRequest = true
                                 }
                             }
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(Theme.font(14, .regular))
                             .foregroundStyle(didSendRequest ? Theme.textSecondary : .white)
                             .padding(.horizontal, 14)
                             .padding(.vertical, 8)

@@ -5,11 +5,11 @@ import SwiftUI
 struct PrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         Capsule()
-            .fill(configuration.isPressed ? Color(hex: "333333") : Theme.ink)
-            .frame(height: 54)
+            .fill(configuration.isPressed ? Theme.accent.opacity(0.85) : Theme.ink)
+            .frame(height: 52)
             .overlay(
                 configuration.label
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(Theme.font(16, .regular))
                     .foregroundStyle(.white)
             )
             .frame(maxWidth: .infinity)
@@ -24,7 +24,7 @@ struct SecondaryButtonStyle: ButtonStyle {
             Capsule().fill(Theme.surface)
             Capsule().strokeBorder(Theme.border, lineWidth: 1.5)
             configuration.label
-                .font(.system(size: 16, weight: .semibold))
+                .font(Theme.font(17, .regular))
                 .foregroundStyle(Theme.textPrimary)
         }
         .frame(height: 54)
@@ -55,7 +55,7 @@ struct ThemedTextField: View {
         HStack(spacing: 12) {
             if let icon = iconName {
                 Image(systemName: icon)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(Theme.font(17, .regular))
                     .foregroundStyle(Theme.textSecondary)
                     .frame(width: 20)
             }
@@ -92,19 +92,19 @@ struct StatTile: View {
     let color: Color
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 4) {
             Text(value)
-                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .font(Theme.font(19))
                 .foregroundStyle(Theme.textPrimary)
             Text(label)
-                .font(.system(size: 11, weight: .medium))
+                .font(Theme.font(11, .regular))
                 .foregroundStyle(Theme.textSecondary)
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
+        .padding(.vertical, 14)
         .background(color.opacity(0.45))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
@@ -115,25 +115,25 @@ struct SettingsRow: View {
     let label: String
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 12) {
             ZStack {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
                     .fill(Theme.surfaceSecondary)
-                    .frame(width: 30, height: 30)
+                    .frame(width: 26, height: 26)
                 Image(systemName: icon)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(Theme.font(12, .regular))
                     .foregroundStyle(Theme.textPrimary)
             }
             Text(label)
-                .font(.system(size: 15, weight: .medium))
+                .font(Theme.font(14, .regular))
                 .foregroundStyle(Theme.textPrimary)
             Spacer()
             Image(systemName: "chevron.right")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Theme.textSecondary)
+                .font(Theme.font(11, .regular))
+                .foregroundStyle(Theme.textSecondary.opacity(0.6))
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 13)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
     }
 }
 
@@ -144,7 +144,7 @@ struct SectionHeader: View {
 
     var body: some View {
         Text(title)
-            .font(.system(size: 17, weight: .bold))
+            .font(Theme.font(16))
             .foregroundStyle(Theme.textPrimary)
     }
 }

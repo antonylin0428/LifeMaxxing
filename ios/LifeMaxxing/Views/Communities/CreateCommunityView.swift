@@ -31,10 +31,10 @@ struct CreateCommunityView: View {
             VStack(alignment: .leading, spacing: 28) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("New Community")
-                        .font(.system(size: 26, weight: .bold))
+                        .font(Theme.font(27))
                         .foregroundStyle(Theme.textPrimary)
                     Text("Create a space for people to compete together")
-                        .font(.system(size: 14))
+                        .font(Theme.font(15))
                         .foregroundStyle(Theme.textSecondary)
                 }
                 .padding(.top, 8)
@@ -70,15 +70,15 @@ struct CreateCommunityView: View {
                     .fill(Color(hex: "B0E8AC").opacity(0.4))
                     .frame(width: 80, height: 80)
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 40, weight: .medium))
+                    .font(Theme.font(41, .regular))
                     .foregroundStyle(Color(hex: "2A8A28"))
             }
             VStack(spacing: 8) {
                 Text("Community Created!")
-                    .font(.system(size: 22, weight: .bold))
+                    .font(Theme.font(23))
                     .foregroundStyle(Theme.textPrimary)
                 Text(community.name)
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(Theme.font(19, .regular))
                     .foregroundStyle(Theme.textSecondary)
             }
             NavigationLink(destination: CommunityDetailView(
@@ -86,7 +86,7 @@ struct CreateCommunityView: View {
                 initialName: community.name
             )) {
                 Text("View Community")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(Theme.font(16, .regular))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 28)
                     .padding(.vertical, 12)

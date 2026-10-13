@@ -42,7 +42,7 @@ struct LeaderboardView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink { FriendsListView() } label: {
                     Image(systemName: "person.2.fill")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(Theme.font(17, .regular))
                 }
             }
         }
@@ -61,7 +61,7 @@ struct LeaderboardView: View {
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(.system(size: 13, weight: .bold))
+            .font(Theme.font(14))
             .foregroundStyle(Theme.textSecondary)
             .textCase(.uppercase)
             .tracking(0.8)
@@ -79,10 +79,10 @@ struct LeaderboardView: View {
         } else if feedPosts.isEmpty {
             VStack(spacing: 12) {
                 Image(systemName: "photo.on.rectangle.angled")
-                    .font(.system(size: 36))
+                    .font(Theme.font(37))
                     .foregroundStyle(Theme.textSecondary.opacity(0.5))
                 Text("No gym posts yet — be the first!")
-                    .font(.system(size: 14))
+                    .font(Theme.font(15))
                     .foregroundStyle(Theme.textSecondary)
             }
             .frame(maxWidth: .infinity)
@@ -134,27 +134,27 @@ struct LeaderboardView: View {
                     .frame(width: 38, height: 38)
                     .overlay(
                         Text(String(post.username.prefix(1)).uppercased())
-                            .font(.system(size: 15, weight: .bold))
+                            .font(Theme.font(16))
                             .foregroundStyle(Theme.ink)
                     )
 
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(post.username)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(Theme.font(13, .regular))
                         .foregroundStyle(Theme.textPrimary)
-                    HStack(spacing: 6) {
+                    HStack(spacing: 5) {
                         if post.currentStreak > 0 {
                             HStack(spacing: 3) {
                                 Image(systemName: "flame.fill")
-                                    .font(.system(size: 10))
-                                    .foregroundStyle(.orange)
+                                    .font(Theme.font(10))
+                                    .foregroundStyle(Theme.accent)
                                 Text("\(post.currentStreak)")
-                                    .font(.system(size: 11, weight: .semibold))
+                                    .font(Theme.font(11, .regular))
                                     .foregroundStyle(Theme.textSecondary)
                             }
                         }
                         Text(timeAgo(post.completedAt))
-                            .font(.system(size: 11))
+                            .font(Theme.font(11))
                             .foregroundStyle(Theme.textSecondary)
                     }
                 }
@@ -162,11 +162,11 @@ struct LeaderboardView: View {
                 Spacer()
 
                 Text("+\(post.xpAwarded) XP")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(Theme.font(12))
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Theme.ink)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 4)
+                    .background(Theme.accent)
                     .clipShape(Capsule())
             }
             .padding(14)
@@ -208,7 +208,7 @@ struct LeaderboardView: View {
                     .fill(rankBadgeColor(rank: rank))
                     .frame(width: 36, height: 36)
                 Text("#\(rank)")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(Theme.font(13))
                     .foregroundStyle(rank <= 3 ? .white : Theme.textSecondary)
             }
 
@@ -217,35 +217,35 @@ struct LeaderboardView: View {
                 .frame(width: 40, height: 40)
                 .overlay(
                     Text(String(entry.username.prefix(1)).uppercased())
-                        .font(.system(size: 16, weight: .bold))
+                        .font(Theme.font(17))
                         .foregroundStyle(Theme.ink)
                 )
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(entry.username)
-                    .font(.system(size: 15, weight: entry.isMe ? .bold : .medium))
+                    .font(.system(size: 13, weight: entry.isMe ? .bold : .medium))
                     .foregroundStyle(Theme.textPrimary)
                 Text(entry.rank.displayName)
-                    .font(.system(size: 11))
+                    .font(Theme.font(11))
                     .foregroundStyle(Theme.textSecondary)
             }
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: 2) {
+            VStack(alignment: .trailing, spacing: 1) {
                 Text("\(entry.totalXP)")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(Theme.font(14))
                     .foregroundStyle(Theme.textPrimary)
                 Text("XP")
-                    .font(.system(size: 10, weight: .medium))
+                    .font(Theme.font(10, .regular))
                     .foregroundStyle(Theme.textSecondary)
             }
         }
         .padding(14)
-        .background(entry.isMe ? Theme.highlight.opacity(0.15) : Theme.surface)
+        .background(entry.isMe ? Theme.accent.opacity(0.10) : Theme.surface)
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(entry.isMe ? Theme.highlight : .clear, lineWidth: 1.5)
+                .strokeBorder(entry.isMe ? Theme.accent.opacity(0.4) : .clear, lineWidth: 1.5)
         )
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 3)
