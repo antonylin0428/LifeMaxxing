@@ -42,7 +42,7 @@ struct SignInView: View {
             .scrollDismissesKeyboard(.interactively)
 
             if viewModel.isLoading {
-                LoadingView()
+                SubmittingOverlay()
             }
         }
         .navigationTitle("Sign In")

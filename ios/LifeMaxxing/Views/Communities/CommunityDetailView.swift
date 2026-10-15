@@ -18,8 +18,7 @@ struct CommunityDetailView: View {
         ZStack {
             Theme.background.ignoresSafeArea()
             if viewModel.isLoading && viewModel.community == nil {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                ScrollView { CommunityListSkeletonView() }
             } else {
                 content
             }
@@ -187,7 +186,11 @@ struct CommunityDetailView: View {
         } label: {
             Group {
                 if viewModel.isJoining {
-                    ProgressView().tint(.white)
+                    HStack(spacing: 5) {
+                        ForEach(0..<3, id: \.self) { _ in
+                            Circle().fill(Color.white.opacity(0.8)).frame(width: 6, height: 6)
+                        }
+                    }
                 } else {
                     Text("Join Community")
                         .font(Theme.font(17, .regular))

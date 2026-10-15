@@ -52,12 +52,15 @@ struct CommunityPaywallView: View {
                         Task { await buy() }
                     } label: {
                         if service.isLoading {
-                            ProgressView()
-                                .tint(.white)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 52)
-                                .background(Color(hex: "7A5CF5"))
-                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            HStack(spacing: 5) {
+                                ForEach(0..<3, id: \.self) { _ in
+                                    Circle().fill(Color.white.opacity(0.8)).frame(width: 6, height: 6)
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .background(Color(hex: "7A5CF5"))
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         } else {
                             Text(priceLabel)
                                 .font(Theme.font(17, .regular))

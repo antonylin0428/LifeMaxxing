@@ -17,7 +17,7 @@ struct UserProfileView: View {
         ZStack {
             Theme.background.ignoresSafeArea()
             if viewModel.isLoading && viewModel.profile == nil {
-                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+                ScrollView { UserProfileSkeletonView() }
             } else if let profile = viewModel.profile {
                 content(profile: profile)
             } else if let err = viewModel.errorMessage {
@@ -145,7 +145,7 @@ struct UserProfileView: View {
                         .overlay(Image(systemName: "photo").foregroundStyle(Theme.textSecondary))
                 default:
                     Color(hex: "E8E8E4").frame(maxWidth: .infinity).frame(height: 240)
-                        .overlay(ProgressView())
+                        .shimmer()
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))

@@ -11,26 +11,27 @@ struct ProfileView: View {
             Theme.background.ignoresSafeArea()
 
             ScrollView {
-                VStack(spacing: 16) {
-                    if let user = viewModel.user {
-                        profileHeader(user: user)
-                        statsRow(user: user)
-                        achievementsSection(user: user)
-                        streaksSection
-                        settingsSection(user: user)
+                if viewModel.isLoading && viewModel.user == nil {
+                    ProfileSkeletonView()
+                } else {
+                    VStack(spacing: 16) {
+                        if let user = viewModel.user {
+                            profileHeader(user: user)
+                            statsRow(user: user)
+                            achievementsSection(user: user)
+                            streaksSection
+                            settingsSection(user: user)
+                        }
+                        signOutButton
+                        if let error = viewModel.errorMessage {
+                            ErrorBanner(message: error)
+                        }
                     }
-                    signOutButton
-                    if let error = viewModel.errorMessage {
-                        ErrorBanner(message: error)
-                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 16)
             }
             .refreshable { await viewModel.load() }
-            .overlay {
-                if viewModel.isLoading && viewModel.user == nil { LoadingView() }
-            }
         }
         .navigationTitle("Profile")
         .task { await viewModel.load() }

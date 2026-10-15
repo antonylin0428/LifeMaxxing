@@ -8,23 +8,35 @@ struct HomeView: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 28) {
-                header
-                heroCard
-                weekStrip
-                questsSection
-                achievementsSection
+            if viewModel.isLoading && viewModel.user == nil {
+                HomeSkeletonView()
+            } else {
+                VStack(spacing: 28) {
+                    header
+                    heroCard
+                    weekStrip
+                    questsSection
+                    achievementsSection
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 36)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-            .padding(.bottom, 36)
         }
         .lmBackground()
         .refreshable { await viewModel.load() }
-        .overlay {
-            if viewModel.isLoading && viewModel.user == nil { LoadingView() }
+        .task {
+            await viewModel.load()
+            appState.completedTodayIds = Set(viewModel.categories.filter { viewModel.isCompletedToday($0) }.map(\.categoryId))
         }
-        .task { await viewModel.load() }
+        .onAppear {
+            if viewModel.user != nil {
+                Task {
+                    await viewModel.load()
+                    appState.completedTodayIds = Set(viewModel.categories.filter { viewModel.isCompletedToday($0) }.map(\.categoryId))
+                }
+            }
+        }
         .safeAreaInset(edge: .bottom) {
             if let error = viewModel.errorMessage {
                 ErrorBanner(message: error)
@@ -278,7 +290,9 @@ struct HomeView: View {
             if let first = ids.first {
                 let stat = statMap[first]
                 NavigationLink {
-                    CategoryDetailView(categoryId: first, initialStat: stat)
+                    CategoryDetailView(categoryId: first, initialStat: stat, onComplete: {
+                        Task { await viewModel.load() }
+                    })
                 } label: {
                     if let s = stat {
                         questCardLarge(s)
@@ -297,7 +311,9 @@ struct HomeView: View {
                     ForEach(Array(rest), id: \.id) { cat in
                         let stat = statMap[cat]
                         NavigationLink {
-                            CategoryDetailView(categoryId: cat, initialStat: stat)
+                            CategoryDetailView(categoryId: cat, initialStat: stat, onComplete: {
+                                Task { await viewModel.load() }
+                            })
                         } label: {
                             if let s = stat {
                                 questCardSmall(s)
@@ -314,7 +330,7 @@ struct HomeView: View {
 
 
     private func questCardLarge(_ category: CategoryStat) -> some View {
-        let done = viewModel.isCompletedToday(category)
+        let done = appState.completedTodayIds.contains(category.categoryId)
 
         return HStack(spacing: 0) {
             // Left content
@@ -391,7 +407,7 @@ struct HomeView: View {
     }
 
     private func questCardSmall(_ category: CategoryStat) -> some View {
-        let done = viewModel.isCompletedToday(category)
+        let done = appState.completedTodayIds.contains(category.categoryId)
 
         return ZStack(alignment: .bottomLeading) {
             RoundedRectangle(cornerRadius: 22, style: .continuous)

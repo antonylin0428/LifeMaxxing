@@ -16,7 +16,7 @@ struct CreateCommunityView: View {
             }
 
             if viewModel.isLoading {
-                LoadingView()
+                SubmittingOverlay()
             }
         }
         .navigationTitle("Create Community")

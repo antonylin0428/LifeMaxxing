@@ -107,6 +107,7 @@ final class AuthViewModel {
         UserDefaults.standard.removeObject(forKey: "sd_goal_minutes")
         UserDefaults.standard.removeObject(forKey: "selectedCategoryIds")
         appState.localCategoryIds = CategoryId.allCases.filter { !$0.isOptional }
+        appState.completedTodayIds = []
         appState.isSignedIn = false
         appState.currentUsername = nil
         appState.hasCompletedOnboarding = false

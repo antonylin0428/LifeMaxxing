@@ -1,14 +1,18 @@
 import SwiftUI
 
 struct QuestsView: View {
+    @Environment(AppState.self) private var appState
     @State private var viewModel = QuestsViewModel()
 
     private var coreCategories: [CategoryStat] {
         viewModel.categories.filter { !$0.categoryId.isOptional }
     }
 
+    // appState.localCategoryIds is the single source of truth for which optional
+    // categories are enabled — same value HomeView uses, so both pages stay in sync.
     private var optionalCategories: [CategoryStat] {
-        viewModel.categories.filter { $0.categoryId.isOptional }
+        let enabledIds = Set(appState.localCategoryIds.filter(\.isOptional))
+        return viewModel.categories.filter { enabledIds.contains($0.categoryId) }
     }
 
     var body: some View {
@@ -16,43 +20,47 @@ struct QuestsView: View {
             Theme.background.ignoresSafeArea()
 
             ScrollView {
-                VStack(spacing: 24) {
-                    // Personal & Community section
-                    questSection(
-                        title: "Personal & Community",
-                        subtitle: "XP from these counts toward community leaderboards",
-                        icon: "trophy.fill",
-                        iconColor: Color(hex: "FFD700"),
-                        categories: coreCategories
-                    )
-
-                    if !optionalCategories.isEmpty {
+                if viewModel.isLoading && viewModel.categories.isEmpty {
+                    QuestsSkeletonView()
+                } else {
+                    VStack(spacing: 24) {
                         questSection(
-                            title: "Personal Only",
-                            subtitle: "Optional — counts toward your personal XP only",
-                            icon: "person.fill",
-                            iconColor: Theme.textSecondary,
-                            categories: optionalCategories
+                            title: "Personal & Community",
+                            subtitle: "XP from these counts toward community leaderboards",
+                            icon: "trophy.fill",
+                            iconColor: Color(hex: "FFD700"),
+                            categories: coreCategories
                         )
+
+                        if !optionalCategories.isEmpty {
+                            questSection(
+                                title: "Personal Only",
+                                subtitle: "Optional — counts toward your personal XP only",
+                                icon: "person.fill",
+                                iconColor: Theme.textSecondary,
+                                categories: optionalCategories
+                            )
+                        }
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 16)
             }
             .refreshable { await viewModel.load() }
-            .overlay {
-                if viewModel.isLoading && viewModel.categories.isEmpty {
-                    LoadingView()
-                }
-            }
-
-            if let reward = viewModel.lastReward {
-                XPRewardOverlay(result: reward)
-                    .onTapGesture { viewModel.lastReward = nil }
-            }
         }
         .navigationTitle("Today")
-        .task { await viewModel.load() }
+        .task {
+            await viewModel.load()
+            appState.completedTodayIds.formUnion(viewModel.categories.filter { viewModel.isCompletedToday($0) }.map(\.categoryId))
+        }
+        .onAppear {
+            if !viewModel.categories.isEmpty {
+                Task {
+                    await viewModel.load()
+                    appState.completedTodayIds.formUnion(viewModel.categories.filter { viewModel.isCompletedToday($0) }.map(\.categoryId))
+                }
+            }
+        }
         .safeAreaInset(edge: .bottom) {
             if let error = viewModel.errorMessage {
                 ErrorBanner(message: error)
@@ -87,10 +95,17 @@ struct QuestsView: View {
 
             VStack(spacing: 8) {
                 ForEach(categories) { category in
-                    let done = viewModel.isCompletedToday(category)
-                    QuestCard(category: category, isDone: done) {
-                        Task { await viewModel.complete(category.categoryId) }
+                    let done = appState.completedTodayIds.contains(category.categoryId)
+                    NavigationLink {
+                        CategoryDetailView(
+                            categoryId: category.categoryId,
+                            initialStat: category,
+                            onComplete: { Task { await viewModel.load() } }
+                        )
+                    } label: {
+                        QuestCard(category: category, isDone: done)
                     }
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -100,7 +115,6 @@ struct QuestsView: View {
 private struct QuestCard: View {
     let category: CategoryStat
     let isDone: Bool
-    let onComplete: () -> Void
 
     var body: some View {
         HStack(spacing: 14) {
@@ -132,18 +146,28 @@ private struct QuestCard: View {
             Spacer()
 
             if isDone {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(Theme.font(25))
-                    .foregroundStyle(Theme.accentGreen)
+                VStack(alignment: .trailing, spacing: 4) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(Theme.font(25))
+                        .foregroundStyle(Theme.accentGreen)
+                    if let xp = category.categoryXPToday, xp > 0 {
+                        Text("+\(xp) XP")
+                            .font(Theme.font(11))
+                            .foregroundStyle(Theme.accentGreen)
+                    }
+                }
             } else {
-                Button(action: onComplete) {
+                HStack(spacing: 4) {
                     Text("Log it")
                         .font(Theme.font(13, .regular))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 7)
-                        .background(Capsule().fill(Theme.accent))
+                        .foregroundStyle(Theme.accent)
+                    Image(systemName: "chevron.right")
+                        .font(Theme.font(11))
+                        .foregroundStyle(Theme.accent.opacity(0.7))
                 }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+                .background(Capsule().fill(Theme.accent.opacity(0.12)))
             }
         }
         .padding(12)

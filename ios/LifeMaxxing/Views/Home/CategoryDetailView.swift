@@ -4,7 +4,9 @@ import PhotosUI
 struct CategoryDetailView: View {
     let categoryId: CategoryId
     var initialStat: CategoryStat?
+    var onComplete: (() -> Void)? = nil
 
+    @Environment(AppState.self) private var appState
     @State private var stat: CategoryStat?
     @State private var isCompleting = false
     @State private var reward: CompleteTaskResult?
@@ -216,7 +218,11 @@ struct CategoryDetailView: View {
                     Task { await complete() }
                 } label: {
                     if isCompleting {
-                        ProgressView().tint(.white)
+                        HStack(spacing: 5) {
+                            ForEach(0..<3, id: \.self) { _ in
+                                Circle().fill(Color.white.opacity(0.8)).frame(width: 6, height: 6)
+                            }
+                        }
                     } else {
                         Text("Mark as Done Today")
                     }
@@ -307,7 +313,11 @@ struct CategoryDetailView: View {
                 } label: {
                     if isUploading || isCompleting {
                         HStack(spacing: 10) {
-                            ProgressView().tint(.white)
+                            HStack(spacing: 5) {
+                            ForEach(0..<3, id: \.self) { _ in
+                                Circle().fill(Color.white.opacity(0.8)).frame(width: 6, height: 6)
+                            }
+                        }
                             Text(isUploading ? "Uploading Photo…" : "Logging Workout…")
                         }
                     } else {
@@ -416,11 +426,20 @@ struct CategoryDetailView: View {
 
                     if focusTimer.hasTime {
                         Button {
-                            focusTimer.markSubmitted()
+                            Task { await submitFocusSession() }
                         } label: {
-                            Text("Submit New Session")
+                            if isCompleting {
+                                HStack(spacing: 5) {
+                            ForEach(0..<3, id: \.self) { _ in
+                                Circle().fill(Color.white.opacity(0.8)).frame(width: 6, height: 6)
+                            }
+                        }
+                            } else {
+                                Text("Submit New Session")
+                            }
                         }
                         .buttonStyle(PrimaryButtonStyle())
+                        .disabled(isCompleting)
                     }
                 }
                 .padding(.horizontal, 20)
@@ -430,7 +449,11 @@ struct CategoryDetailView: View {
                         Task { await submitFocusSession() }
                     } label: {
                         if isCompleting {
-                            ProgressView().tint(.white)
+                            HStack(spacing: 5) {
+                            ForEach(0..<3, id: \.self) { _ in
+                                Circle().fill(Color.white.opacity(0.8)).frame(width: 6, height: 6)
+                            }
+                        }
                         } else {
                             Text("Submit Session")
                         }
@@ -606,7 +629,11 @@ struct CategoryDetailView: View {
                         Task { await submitScreenTime() }
                     } label: {
                         if isCompleting {
-                            ProgressView().tint(.white)
+                            HStack(spacing: 5) {
+                            ForEach(0..<3, id: \.self) { _ in
+                                Circle().fill(Color.white.opacity(0.8)).frame(width: 6, height: 6)
+                            }
+                        }
                         } else {
                             Text("Submit Check-In")
                         }
@@ -646,9 +673,16 @@ struct CategoryDetailView: View {
                         .foregroundStyle(Theme.textSecondary)
                     }
                     Spacer()
-                    Text(focusTimer.formatted(session.seconds))
-                        .font(Theme.font(15))
-                        .foregroundStyle(Theme.textPrimary)
+                    VStack(alignment: .trailing, spacing: 3) {
+                        Text(focusTimer.formatted(session.seconds))
+                            .font(Theme.font(15))
+                            .foregroundStyle(Theme.textPrimary)
+                        if session.xpEarned > 0 {
+                            Text("+\(session.xpEarned) XP")
+                                .font(Theme.font(11))
+                                .foregroundStyle(Theme.accentGreen)
+                        }
+                    }
                 }
                 .padding(14)
                 .background(Theme.surface)
@@ -682,10 +716,12 @@ struct CategoryDetailView: View {
         defer { isCompleting = false }
         do {
             reward = try await TasksAPI.shared.completeTask(categoryId: categoryId)
+            appState.completedTodayIds.insert(categoryId)
             if let fresh = try? await ProfileAPI.shared.getCategories()
                 .first(where: { $0.categoryId == categoryId }) {
                 stat = fresh
             }
+            onComplete?()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -696,12 +732,15 @@ struct CategoryDetailView: View {
         errorMessage = nil
         defer { isCompleting = false }
         do {
-            reward = try await TasksAPI.shared.completeTask(categoryId: categoryId)
-            focusTimer.markSubmitted()
+            let duration = Int(focusTimer.accumulatedSeconds)
+            reward = try await TasksAPI.shared.completeTask(categoryId: categoryId, durationSeconds: duration)
+            focusTimer.markSubmitted(xpEarned: reward?.finalXPAwarded ?? 0)
+            appState.completedTodayIds.insert(categoryId)
             if let fresh = try? await ProfileAPI.shared.getCategories()
                 .first(where: { $0.categoryId == categoryId }) {
                 stat = fresh
             }
+            onComplete?()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -725,6 +764,8 @@ struct CategoryDetailView: View {
                 .first(where: { $0.categoryId == categoryId }) {
                 stat = fresh
             }
+            appState.completedTodayIds.insert(categoryId)
+            onComplete?()
         } catch {
             isUploading = false
             isCompleting = false
@@ -740,10 +781,12 @@ struct CategoryDetailView: View {
         do {
             reward = try await TasksAPI.shared.completeTask(categoryId: categoryId)
             sdManager.submitToday(checkInHours * 60 + checkInMins)
+            appState.completedTodayIds.insert(categoryId)
             if let fresh = try? await ProfileAPI.shared.getCategories()
                 .first(where: { $0.categoryId == categoryId }) {
                 stat = fresh
             }
+            onComplete?()
         } catch {
             errorMessage = error.localizedDescription
         }

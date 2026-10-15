@@ -25,4 +25,9 @@ final class AppState {
         return required
     }()
 
+    // Categories the user has completed today. Updated immediately on task
+    // completion so HomeView/QuestsView shade cards without waiting for a
+    // network reload. Populated from server data on load.
+    var completedTodayIds: Set<CategoryId> = []
+
 }

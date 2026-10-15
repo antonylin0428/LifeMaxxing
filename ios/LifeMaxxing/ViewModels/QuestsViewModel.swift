@@ -29,7 +29,8 @@ final class QuestsViewModel {
                     lastCompletedDate: nil,
                     multiplierCache: nil,
                     freezesAvailable: 1,
-                    enabled: nil
+                    enabled: nil,
+                    categoryXPToday: nil
                 )
             }
         } catch {

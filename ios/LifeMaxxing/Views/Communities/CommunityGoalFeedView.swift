@@ -130,7 +130,7 @@ struct CommunityGoalFeedView: View {
                 .tracking(0.8)
 
             if viewModel.isLoadingFeed && viewModel.feedPosts.isEmpty {
-                ProgressView().frame(maxWidth: .infinity).padding(.vertical, 40)
+                FeedSkeletonView().padding(.top, 8)
             } else if viewModel.feedPosts.isEmpty {
                 VStack(spacing: 10) {
                     Image(systemName: "checkmark.circle")
@@ -163,7 +163,7 @@ struct CommunityGoalFeedView: View {
                             .frame(maxWidth: .infinity).frame(height: 200).clipped()
                     default:
                         Color(hex: "E8E8E4").frame(maxWidth: .infinity).frame(height: 200)
-                            .overlay(ProgressView())
+                            .shimmer()
                     }
                 }
                 .clipShape(UnevenRoundedRectangle(
@@ -402,7 +402,11 @@ struct GoalCompletionSheet: View {
         } label: {
             Group {
                 if viewModel.isSubmitting {
-                    ProgressView().tint(.white)
+                    HStack(spacing: 5) {
+                        ForEach(0..<3, id: \.self) { _ in
+                            Circle().fill(Color.white.opacity(0.8)).frame(width: 6, height: 6)
+                        }
+                    }
                 } else {
                     Text(viewModel.goal.myCompletion == nil ? "Submit" : "Update")
                         .font(Theme.font(17, .regular))

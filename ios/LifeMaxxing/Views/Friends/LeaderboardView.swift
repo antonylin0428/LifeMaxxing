@@ -10,31 +10,32 @@ struct LeaderboardView: View {
             Theme.background.ignoresSafeArea()
 
             ScrollView {
-                VStack(spacing: 0) {
-                    // Leaderboard section
-                    sectionHeader("Leaderboard")
-                    VStack(spacing: 8) {
-                        ForEach(Array(viewModel.entries.enumerated()), id: \.element.id) { index, entry in
-                            leaderboardRow(rank: index + 1, entry: entry)
+                if viewModel.isLoading && viewModel.entries.isEmpty {
+                    LeaderboardSkeletonView()
+                } else {
+                    VStack(spacing: 0) {
+                        // Leaderboard section
+                        sectionHeader("Leaderboard")
+                        VStack(spacing: 8) {
+                            ForEach(Array(viewModel.entries.enumerated()), id: \.element.id) { index, entry in
+                                leaderboardRow(rank: index + 1, entry: entry)
+                            }
                         }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 24)
-
-                    // Community Feed section
-                    sectionHeader("Community Feed")
-                    communityFeed
                         .padding(.horizontal, 20)
-                        .padding(.bottom, 36)
+                        .padding(.bottom, 24)
+
+                        // Community Feed section
+                        sectionHeader("Community Feed")
+                        communityFeed
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 36)
+                    }
+                    .padding(.top, 8)
                 }
-                .padding(.top, 8)
             }
             .refreshable {
                 await viewModel.load()
                 await loadFeed()
-            }
-            .overlay {
-                if viewModel.isLoading && viewModel.entries.isEmpty { LoadingView() }
             }
         }
         .navigationTitle("Leaderboard")
@@ -73,9 +74,7 @@ struct LeaderboardView: View {
     @ViewBuilder
     private var communityFeed: some View {
         if isFeedLoading && feedPosts.isEmpty {
-            ProgressView()
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 40)
+            FeedSkeletonView()
         } else if feedPosts.isEmpty {
             VStack(spacing: 12) {
                 Image(systemName: "photo.on.rectangle.angled")
@@ -119,7 +118,7 @@ struct LeaderboardView: View {
                     Color(hex: "E8E8E4")
                         .frame(maxWidth: .infinity)
                         .frame(height: 220)
-                        .overlay(ProgressView())
+                        .shimmer()
                 }
             }
             .clipShape(UnevenRoundedRectangle(

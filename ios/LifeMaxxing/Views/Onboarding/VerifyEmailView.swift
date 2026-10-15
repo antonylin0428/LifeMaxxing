@@ -64,7 +64,7 @@ struct VerifyEmailView: View {
             .scrollDismissesKeyboard(.interactively)
 
             if viewModel.isLoading {
-                LoadingView()
+                SubmittingOverlay()
             }
         }
         .navigationTitle("Verify Email")

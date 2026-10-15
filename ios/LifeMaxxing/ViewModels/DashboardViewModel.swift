@@ -39,7 +39,7 @@ final class DashboardViewModel {
     private static var todayDateString: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
-        formatter.timeZone = .current
+        formatter.timeZone = TimeZone(identifier: "UTC")!
         return formatter.string(from: Date())
     }
 }

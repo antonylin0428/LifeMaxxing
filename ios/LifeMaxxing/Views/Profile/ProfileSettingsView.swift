@@ -219,12 +219,12 @@ struct ProfileSettingsView: View {
                     .fill(viewModel.canSave ? Theme.ink : Theme.surfaceSecondary)
 
                 if viewModel.isSaving {
-                    HStack(spacing: 10) {
-                        ProgressView()
-                            .tint(viewModel.canSave ? .white : Theme.textSecondary)
-                        Text("Saving…")
-                            .font(Theme.font(17, .regular))
-                            .foregroundStyle(viewModel.canSave ? .white : Theme.textSecondary)
+                    HStack(spacing: 5) {
+                        ForEach(0..<3, id: \.self) { _ in
+                            Circle()
+                                .fill((viewModel.canSave ? Color.white : Theme.textSecondary).opacity(0.8))
+                                .frame(width: 6, height: 6)
+                        }
                     }
                 } else {
                     Text(viewModel.hasChanges ? "Save Changes" : "No Changes")

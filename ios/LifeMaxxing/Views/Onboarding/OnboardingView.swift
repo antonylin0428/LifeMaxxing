@@ -282,7 +282,11 @@ struct OnboardingView: View {
                 Task { await finish() }
             } label: {
                 if isSaving {
-                    ProgressView().tint(.white)
+                    HStack(spacing: 5) {
+                        ForEach(0..<3, id: \.self) { _ in
+                            Circle().fill(Color.white.opacity(0.8)).frame(width: 6, height: 6)
+                        }
+                    }
                 } else {
                     Text("Start Leveling Up")
                 }
@@ -298,13 +302,18 @@ struct OnboardingView: View {
 
     private func finish() async {
         isSaving = true
-        // Persist locally so the home screen can show categories without a backend round-trip
-        UserDefaults.standard.set(allSelected.map(\.rawValue), forKey: "selectedCategoryIds")
-        // Enable any optional categories the user picked on the backend
+        let chosen = allSelected
+        // Update AppState directly (stored var, not recomputed from UserDefaults)
+        // so HomeView reflects the selection as soon as onboarding completes.
+        appState.localCategoryIds = chosen
+        UserDefaults.standard.set(chosen.map(\.rawValue), forKey: "selectedCategoryIds")
+        // Sync every optional category's enabled state so returning accounts
+        // don't inherit stale enabled=true entries from a previous session.
         await withTaskGroup(of: Void.self) { group in
-            for cat in selectedOptional {
+            for cat in optional {
+                let isEnabled = selectedOptional.contains(cat)
                 group.addTask {
-                    try? await ProfileAPI.shared.setCategoryEnabled(cat, enabled: true)
+                    try? await ProfileAPI.shared.setCategoryEnabled(cat, enabled: isEnabled)
                 }
             }
         }

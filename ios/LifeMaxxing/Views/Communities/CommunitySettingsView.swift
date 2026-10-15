@@ -56,7 +56,9 @@ struct CommunitySettingsView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 if viewModel.isSaving {
-                    ProgressView()
+                    Text("Saving…")
+                        .font(Theme.font(16, .regular))
+                        .foregroundStyle(Theme.textSecondary)
                 } else {
                     Button("Save") { Task { await viewModel.save() } }
                         .font(Theme.font(16, .regular))

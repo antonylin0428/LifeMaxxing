@@ -6,6 +6,7 @@ struct FocusSession: Codable, Identifiable {
     let startedAt: Date
     let submittedAt: Date
     let seconds: TimeInterval
+    var xpEarned: Int = 0   // 0 for sessions after the first (no API call)
 }
 
 @Observable
@@ -83,14 +84,15 @@ final class FocusTimerManager {
 
     // Call after a successful completeTask API response (first session)
     // OR directly for additional sessions — no API needed.
-    func markSubmitted() {
+    func markSubmitted(xpEarned: Int = 0) {
         pause()
         let secs = accumulatedSeconds
         guard secs > 0 else { return }
         sessions.append(FocusSession(
             startedAt: currentSessionStartedAt ?? Date(),
             submittedAt: Date(),
-            seconds: secs
+            seconds: secs,
+            xpEarned: xpEarned
         ))
         accumulatedSeconds = 0
         displaySeconds = 0

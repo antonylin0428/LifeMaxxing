@@ -9,8 +9,7 @@ struct MyCommunityListView: View {
             Theme.background.ignoresSafeArea()
 
             if viewModel.isLoading && viewModel.communities.isEmpty {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                ScrollView { CommunityListSkeletonView() }
             } else if viewModel.communities.isEmpty {
                 emptyState
             } else {

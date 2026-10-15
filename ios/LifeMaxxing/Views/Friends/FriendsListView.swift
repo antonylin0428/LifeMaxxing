@@ -8,19 +8,20 @@ struct FriendsListView: View {
             Theme.background.ignoresSafeArea()
 
             ScrollView {
-                VStack(spacing: 20) {
-                    if !viewModel.received.isEmpty {
-                        pendingSection
+                if viewModel.isLoading && viewModel.friends.isEmpty {
+                    FriendsListSkeletonView()
+                } else {
+                    VStack(spacing: 20) {
+                        if !viewModel.received.isEmpty {
+                            pendingSection
+                        }
+                        friendsSection
                     }
-                    friendsSection
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 16)
             }
             .refreshable { await viewModel.load() }
-            .overlay {
-                if viewModel.isLoading && viewModel.friends.isEmpty { LoadingView() }
-            }
         }
         .navigationTitle("Friends")
         .toolbar {

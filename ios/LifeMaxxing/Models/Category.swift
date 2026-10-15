@@ -49,4 +49,5 @@ struct CategoryStat: Codable, Identifiable {
     let multiplierCache: Double?
     let freezesAvailable: Int?
     let enabled: Bool?
+    let categoryXPToday: Int?   // XP earned in this category today; nil = none yet
 }
