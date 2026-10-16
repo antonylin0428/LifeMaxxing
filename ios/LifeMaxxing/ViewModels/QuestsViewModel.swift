@@ -50,16 +50,11 @@ final class QuestsViewModel {
         }
     }
 
-    /// Compares the server's lastCompletedDate (YYYY-MM-DD UTC) to today in
-    /// UTC so the check matches the server's own day-boundary logic exactly.
+    /// Compares the server's lastCompletedDate (YYYY-MM-DD in the user's own
+    /// timezone) to today in that same local timezone, matching the server's
+    /// day-boundary logic exactly.
     func isCompletedToday(_ category: CategoryStat) -> Bool {
         guard let last = category.lastCompletedDate else { return false }
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "UTC")!
-        let todayUTC = cal.startOfDay(for: Date())
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.timeZone = TimeZone(identifier: "UTC")!
-        return last == formatter.string(from: todayUTC)
+        return last == Date().localDayString
     }
 }

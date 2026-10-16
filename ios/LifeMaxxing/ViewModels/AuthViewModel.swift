@@ -47,6 +47,7 @@ final class AuthViewModel {
             pendingVerificationEmail = nil
             // hasCompletedOnboarding stays false → RootView routes to OnboardingView
             appState.isSignedIn = true
+            await Self.syncTimezone()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -80,12 +81,25 @@ final class AuthViewModel {
             try await AuthService.shared.signIn(email: email, password: password)
             appState.isSignedIn = true
             appState.currentUsername = username
+            await Self.syncTimezone()
         } catch AuthServiceError.userNotConfirmed {
             // Account exists but never finished email verification - route
             // back into Verify rather than leaving them stuck on Sign In.
             await recoverPendingVerification(email: email, message: AuthServiceError.userNotConfirmed.errorDescription)
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    /// Pushes the device's current IANA timezone to the server so day-boundary
+    /// logic (task resets, streaks) uses the user's local midnight instead of
+    /// UTC. Best-effort: on failure the server just keeps its last-known
+    /// timezone (UTC for a brand-new account) until the next sign-in retries.
+    static func syncTimezone() async {
+        do {
+            try await ProfileAPI.shared.updateProfile(timezone: TimeZone.current.identifier)
+        } catch {
+            // Non-fatal — see doc comment above.
         }
     }
 

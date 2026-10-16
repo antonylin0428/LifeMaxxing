@@ -19,14 +19,20 @@ exports.handler = async (event) => {
   const { photoS3Key } = body;
   if (!photoS3Key) return http.badRequest('photoS3Key is required');
 
-  // Verify user is a member
-  const { Item: membership } = await ddb.send(new GetCommand({
-    TableName: TableNames.COMMUNITIES,
-    Key: { PK: `COMMUNITY#${communityId}`, SK: `MEMBER#${userSub}` },
-  }));
+  // Verify user is a member, and fetch their timezone for the day-boundary check.
+  const [{ Item: membership }, { Item: user }] = await Promise.all([
+    ddb.send(new GetCommand({
+      TableName: TableNames.COMMUNITIES,
+      Key: { PK: `COMMUNITY#${communityId}`, SK: `MEMBER#${userSub}` },
+    })),
+    ddb.send(new GetCommand({
+      TableName: TableNames.USERS,
+      Key: { PK: `USER#${userSub}`, SK: 'PROFILE' },
+    })),
+  ]);
   if (!membership) return http.forbidden('You are not a member of this community');
 
-  const date = todayString();
+  const date = todayString(user?.timezone);
   // TTL: 30 days from now (auto-purge old feed posts)
   const ttl = Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;
 

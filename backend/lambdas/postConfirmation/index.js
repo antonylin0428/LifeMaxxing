@@ -6,7 +6,7 @@
 // one more place a client could try to inject arbitrary starting values.
 
 const { PutCommand } = require('@aws-sdk/lib-dynamodb');
-const { dynamo } = require('lifemaxxing-shared');
+const { dynamo, DEFAULT_TIMEZONE } = require('lifemaxxing-shared');
 
 const { ddb, TableNames } = dynamo;
 
@@ -29,6 +29,10 @@ exports.handler = async (event) => {
       currentSeasonId: 'none',
       rank: 'LOW_TIER_NORMIE_1',
       rankIndex: 0,
+      // Real value is set by the client via PUT /me/profile right after
+      // sign-in, once it knows the device's IANA timezone. UTC is the safe
+      // default in between - it's what the whole app already assumed.
+      timezone: DEFAULT_TIMEZONE,
       // One-time purchase flag: set to true after StoreKit purchase verified.
       // Gates community creation; everyone starts without access.
       hasCommunityAccess: false,

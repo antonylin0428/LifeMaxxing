@@ -15,6 +15,7 @@ struct SetMockCommunityAccessRequest: Encodable {
 struct UpdateProfileRequest: Encodable {
     let username: String?
     let avatarKey: String?
+    let timezone: String?
 }
 
 struct AvatarUploadUrlResponse: Decodable {
@@ -43,8 +44,8 @@ struct ProfileAPI {
         )
     }
 
-    func updateProfile(username: String? = nil, avatarKey: String? = nil) async throws {
-        let body = UpdateProfileRequest(username: username, avatarKey: avatarKey)
+    func updateProfile(username: String? = nil, avatarKey: String? = nil, timezone: String? = nil) async throws {
+        let body = UpdateProfileRequest(username: username, avatarKey: avatarKey, timezone: timezone)
         let _: EmptyResponse = try await APIClient.shared.request(path: "/me/profile", method: .put, body: body)
     }
 

@@ -116,7 +116,7 @@ final class FocusTimerManager {
     // MARK: - Restore
 
     func restore() {
-        let today = todayUTC()
+        let today = Date().localDayString
         let savedDate = UserDefaults.standard.string(forKey: K.date) ?? ""
 
         if savedDate == today {
@@ -146,7 +146,7 @@ final class FocusTimerManager {
     // MARK: - Persistence
 
     private func save() {
-        UserDefaults.standard.set(todayUTC(),         forKey: K.date)
+        UserDefaults.standard.set(Date().localDayString, forKey: K.date)
         UserDefaults.standard.set(accumulatedSeconds, forKey: K.accumulated)
         UserDefaults.standard.set(isSubmittedToday,   forKey: K.submitted)
         if let data = try? JSONEncoder().encode(sessions) {
@@ -157,12 +157,5 @@ final class FocusTimerManager {
         } else {
             UserDefaults.standard.removeObject(forKey: K.sessionStartedAt)
         }
-    }
-
-    private func todayUTC() -> String {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        f.timeZone   = TimeZone(identifier: "UTC")!
-        return f.string(from: Date())
     }
 }

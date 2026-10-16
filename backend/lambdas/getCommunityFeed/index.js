@@ -24,18 +24,27 @@ exports.handler = async (event) => {
   }));
   if (!membership) return http.forbidden('You are not a member of this community');
 
-  const date = todayString();
+  // Posts are keyed by the poster's own local calendar day (see
+  // postCommunityPhoto), which can run up to ~1 day ahead/behind UTC
+  // depending on timezone. Query a UTC-anchored net wide enough to catch
+  // any post that could still be within the last 24 real hours, then filter
+  // precisely below using the absolute postedAt timestamp - that's what
+  // actually defines "taken down after 24 hours," not the calendar date.
+  const netStart = todayString('UTC', new Date(Date.now() - 2 * 24 * 60 * 60 * 1000));
+  const netEnd = todayString('UTC', new Date(Date.now() + 24 * 60 * 60 * 1000));
 
-  // Query today's feed posts for this community
-  const { Items: posts = [] } = await ddb.send(new QueryCommand({
+  const { Items: candidates = [] } = await ddb.send(new QueryCommand({
     TableName: COMMUNITY_FEED_TABLE,
     KeyConditionExpression: 'PK = :pk AND SK BETWEEN :start AND :end',
     ExpressionAttributeValues: {
       ':pk': `COMMUNITY#${communityId}`,
-      ':start': `DATE#${date}#USER#`,
-      ':end': `DATE#${date}#USER#~`,
+      ':start': `DATE#${netStart}#USER#`,
+      ':end': `DATE#${netEnd}#USER#~`,
     },
   }));
+
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  const posts = candidates.filter(p => new Date(p.postedAt).getTime() >= cutoff);
 
   if (posts.length === 0) return http.ok([]);
 

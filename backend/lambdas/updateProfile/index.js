@@ -1,7 +1,7 @@
 'use strict';
 
 const { QueryCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
-const { getUserSub, http, dynamo } = require('lifemaxxing-shared');
+const { getUserSub, http, dynamo, isValidTimezone } = require('lifemaxxing-shared');
 
 const { ddb, TableNames } = dynamo;
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
@@ -21,9 +21,9 @@ exports.handler = async (event) => {
     return http.badRequest('Invalid JSON');
   }
 
-  const { username, avatarKey } = body;
-  if (username === undefined && avatarKey === undefined) {
-    return http.badRequest('Provide at least one of: username, avatarKey');
+  const { username, avatarKey, timezone } = body;
+  if (username === undefined && avatarKey === undefined && timezone === undefined) {
+    return http.badRequest('Provide at least one of: username, avatarKey, timezone');
   }
 
   const setExprs = ['#ua = :ua'];
@@ -54,6 +54,15 @@ exports.handler = async (event) => {
   if (avatarKey !== undefined) {
     setExprs.push('avatarKey = :avatarKey');
     vals[':avatarKey'] = avatarKey;
+  }
+
+  if (timezone !== undefined) {
+    if (!isValidTimezone(timezone)) {
+      return http.badRequest('timezone must be a valid IANA timezone identifier');
+    }
+    setExprs.push('#tz = :tz');
+    names['#tz'] = 'timezone';
+    vals[':tz'] = timezone;
   }
 
   await ddb.send(new UpdateCommand({

@@ -27,13 +27,16 @@ exports.handler = async (event) => {
   }
 
   const key = { PK: `USER#${userSub}`, SK: `CATEGORY#${categoryId}` };
-  const { Item: stats } = await ddb.send(new GetCommand({ TableName: TableNames.CATEGORY_STATS, Key: key }));
+  const [{ Item: stats }, { Item: user }] = await Promise.all([
+    ddb.send(new GetCommand({ TableName: TableNames.CATEGORY_STATS, Key: key })),
+    ddb.send(new GetCommand({ TableName: TableNames.USERS, Key: { PK: `USER#${userSub}`, SK: 'PROFILE' } })),
+  ]);
   if (!stats) return http.notFound('Category not set up yet');
   if (!stats.freezesAvailable || stats.freezesAvailable <= 0) {
     return http.conflict('No streak freezes available');
   }
 
-  const serverDate = todayString();
+  const serverDate = todayString(user?.timezone);
   await ddb.send(new UpdateCommand({
     TableName: TableNames.CATEGORY_STATS,
     Key: key,

@@ -13,13 +13,19 @@ exports.handler = async (event) => {
   const communityId = event.pathParameters?.communityId;
   if (!communityId) return http.badRequest('communityId path parameter required');
 
-  const { Item: membership } = await ddb.send(new GetCommand({
-    TableName: TableNames.COMMUNITIES,
-    Key: { PK: `COMMUNITY#${communityId}`, SK: `MEMBER#${userSub}` },
-  }));
+  const [{ Item: membership }, { Item: user }] = await Promise.all([
+    ddb.send(new GetCommand({
+      TableName: TableNames.COMMUNITIES,
+      Key: { PK: `COMMUNITY#${communityId}`, SK: `MEMBER#${userSub}` },
+    })),
+    ddb.send(new GetCommand({
+      TableName: TableNames.USERS,
+      Key: { PK: `USER#${userSub}`, SK: 'PROFILE' },
+    })),
+  ]);
   if (!membership) return http.forbidden('Not a member of this community');
 
-  const date = todayString();
+  const date = todayString(user?.timezone);
 
   const [goalsRes, completionsRes] = await Promise.all([
     ddb.send(new QueryCommand({

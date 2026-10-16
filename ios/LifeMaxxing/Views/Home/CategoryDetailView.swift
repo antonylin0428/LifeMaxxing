@@ -31,12 +31,7 @@ struct CategoryDetailView: View {
 
     private var isCompletedToday: Bool {
         guard let last = stat?.lastCompletedDate else { return false }
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "UTC")!
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        f.timeZone = TimeZone(identifier: "UTC")!
-        return last == f.string(from: cal.startOfDay(for: Date()))
+        return last == Date().localDayString
     }
 
     var body: some View {

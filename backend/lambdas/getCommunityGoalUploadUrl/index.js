@@ -16,7 +16,7 @@ exports.handler = async (event) => {
   const { communityId, goalId } = event.pathParameters ?? {};
   if (!communityId || !goalId) return http.badRequest('communityId and goalId path parameters required');
 
-  const [{ Item: membership }, { Item: goal }] = await Promise.all([
+  const [{ Item: membership }, { Item: goal }, { Item: user }] = await Promise.all([
     ddb.send(new GetCommand({
       TableName: TableNames.COMMUNITIES,
       Key: { PK: `COMMUNITY#${communityId}`, SK: `MEMBER#${userSub}` },
@@ -25,13 +25,17 @@ exports.handler = async (event) => {
       TableName: TableNames.COMMUNITIES,
       Key: { PK: `COMMUNITY#${communityId}`, SK: `GOAL#${goalId}` },
     })),
+    ddb.send(new GetCommand({
+      TableName: TableNames.USERS,
+      Key: { PK: `USER#${userSub}`, SK: 'PROFILE' },
+    })),
   ]);
 
   if (!membership) return http.forbidden('Not a member of this community');
   if (!goal) return http.notFound('Goal not found');
   if (goal.trackingType === 'text') return http.badRequest('This goal does not require a photo');
 
-  const date = todayString();
+  const date = todayString(user?.timezone);
   const s3Key = `community-feed/${communityId}/${goalId}/${date}/${userSub}.jpg`;
   const command = new PutObjectCommand({ Bucket: BUCKET, Key: s3Key, ContentType: 'image/jpeg' });
   const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 300 });

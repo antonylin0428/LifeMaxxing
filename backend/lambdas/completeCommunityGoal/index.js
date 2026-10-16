@@ -16,7 +16,7 @@ exports.handler = async (event) => {
   let body;
   try { body = JSON.parse(event.body || '{}'); } catch { return http.badRequest('Invalid JSON'); }
 
-  const [{ Item: membership }, { Item: goal }] = await Promise.all([
+  const [{ Item: membership }, { Item: goal }, { Item: user }] = await Promise.all([
     ddb.send(new GetCommand({
       TableName: TableNames.COMMUNITIES,
       Key: { PK: `COMMUNITY#${communityId}`, SK: `MEMBER#${userSub}` },
@@ -24,6 +24,10 @@ exports.handler = async (event) => {
     ddb.send(new GetCommand({
       TableName: TableNames.COMMUNITIES,
       Key: { PK: `COMMUNITY#${communityId}`, SK: `GOAL#${goalId}` },
+    })),
+    ddb.send(new GetCommand({
+      TableName: TableNames.USERS,
+      Key: { PK: `USER#${userSub}`, SK: 'PROFILE' },
     })),
   ]);
 
@@ -42,7 +46,7 @@ exports.handler = async (event) => {
     return http.badRequest('text must be 500 characters or fewer');
   }
 
-  const date = todayString();
+  const date = todayString(user?.timezone);
   const ttl = Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;
 
   await ddb.send(new PutCommand({

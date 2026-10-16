@@ -295,9 +295,12 @@ Resources:
         AttributeName: ttl
         Enabled: true
 
-  # CommunityFeed: PK=COMMUNITY#<id>, SK=DATE#<date>#USER#<sub>
-  # One post per user per day per community. PutItem replaces on retake.
-  # TTL auto-purges posts after 30 days.
+  # CommunityFeed: PK=COMMUNITY#<id>, SK=DATE#<date>#USER#<sub> (or
+  # DATE#<date>#GOAL#<goalId>#USER#<sub> for goal completions).
+  # One post per user per day per community(/goal). PutItem replaces on retake.
+  # TTL auto-purges posts after 30 days. The live community feed
+  # (getCommunityFeed/getCommunityGoalFeed) further narrows this down to only
+  # the last 24h at query time - photos aren't needed past that anyway.
   CommunityFeedTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -404,6 +407,9 @@ Resources:
                 - dynamodb:GetItem
                 - dynamodb:UpdateItem
               Resource: !GetAtt CategoryStatsTable.Arn
+            - Effect: Allow
+              Action: dynamodb:GetItem
+              Resource: !GetAtt UsersTable.Arn
       Events:
         UseStreakFreeze:
           Type: HttpApi
@@ -647,7 +653,9 @@ Resources:
         - Statement:
             - Effect: Allow
               Action: dynamodb:GetItem
-              Resource: !GetAtt CommunitiesTable.Arn
+              Resource:
+                - !GetAtt CommunitiesTable.Arn
+                - !GetAtt UsersTable.Arn
             - Effect: Allow
               Action: s3:PutObject
               Resource: !Sub "${GymPhotosBucket.Arn}/community-feed/*"
@@ -668,7 +676,9 @@ Resources:
         - Statement:
             - Effect: Allow
               Action: dynamodb:GetItem
-              Resource: !GetAtt CommunitiesTable.Arn
+              Resource:
+                - !GetAtt CommunitiesTable.Arn
+                - !GetAtt UsersTable.Arn
             - Effect: Allow
               Action: dynamodb:PutItem
               Resource: !GetAtt CommunityFeedTable.Arn
@@ -716,7 +726,9 @@ Resources:
         - Statement:
             - Effect: Allow
               Action: dynamodb:GetItem
-              Resource: !GetAtt CommunitiesTable.Arn
+              Resource:
+                - !GetAtt CommunitiesTable.Arn
+                - !GetAtt UsersTable.Arn
             - Effect: Allow
               Action: dynamodb:Query
               Resource:
@@ -761,7 +773,9 @@ Resources:
         - Statement:
             - Effect: Allow
               Action: dynamodb:GetItem
-              Resource: !GetAtt CommunitiesTable.Arn
+              Resource:
+                - !GetAtt CommunitiesTable.Arn
+                - !GetAtt UsersTable.Arn
             - Effect: Allow
               Action: s3:PutObject
               Resource: !Sub "${GymPhotosBucket.Arn}/community-feed/*"
@@ -782,7 +796,9 @@ Resources:
         - Statement:
             - Effect: Allow
               Action: dynamodb:GetItem
-              Resource: !GetAtt CommunitiesTable.Arn
+              Resource:
+                - !GetAtt CommunitiesTable.Arn
+                - !GetAtt UsersTable.Arn
             - Effect: Allow
               Action: dynamodb:PutItem
               Resource: !GetAtt CommunityFeedTable.Arn
@@ -923,6 +939,9 @@ Resources:
             - Effect: Allow
               Action: dynamodb:Query
               Resource: !GetAtt FriendshipsTable.Arn
+            - Effect: Allow
+              Action: dynamodb:BatchGetItem
+              Resource: !GetAtt UsersTable.Arn
       Events:
         ListFriends:
           Type: HttpApi

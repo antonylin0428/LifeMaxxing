@@ -65,6 +65,9 @@ struct RootView: View {
                 // Session restore = returning user, skip onboarding
                 appState.hasCompletedOnboarding = true
                 appState.isSignedIn = true
+                // Keeps the server's day-boundary timezone current for
+                // returning users too (e.g. after traveling), not just at sign-in.
+                await AuthViewModel.syncTimezone()
             }
         }
         .onChange(of: scenePhase) { _, newPhase in

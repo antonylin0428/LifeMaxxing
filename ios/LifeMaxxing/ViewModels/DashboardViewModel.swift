@@ -33,13 +33,6 @@ final class DashboardViewModel {
 
     func isCompletedToday(_ category: CategoryStat) -> Bool {
         guard let lastCompletedDate = category.lastCompletedDate else { return false }
-        return lastCompletedDate == Self.todayDateString
-    }
-
-    private static var todayDateString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.timeZone = TimeZone(identifier: "UTC")!
-        return formatter.string(from: Date())
+        return lastCompletedDate == Date().localDayString
     }
 }

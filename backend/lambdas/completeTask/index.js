@@ -34,7 +34,7 @@ exports.handler = async (event) => {
     return http.badRequest('Request body must be valid JSON');
   }
 
-  const { categoryId, idempotencyKey, photoS3Key } = body;
+  const { categoryId, idempotencyKey, photoS3Key, durationSeconds } = body;
   if (!categoryId || !isValidCategory(categoryId)) {
     return http.badRequest('categoryId is required and must be a known category');
   }
@@ -46,10 +46,13 @@ exports.handler = async (event) => {
       return http.badRequest('photoS3Key must start with gym-photos/');
     }
   }
+  if (categoryId === 'FOCUS') {
+    if (typeof durationSeconds !== 'number' || durationSeconds <= 0) {
+      return http.badRequest('durationSeconds is required for FOCUS and must be a positive number');
+    }
+  }
 
-  const serverDate = todayString();
   const dailyLogPK = `USER#${userSub}`;
-  const dailyLogSK = `LOG#${serverDate}#${categoryId}`;
 
   // Step 1: read current CategoryStats and Users state to compute the new streak/XP.
   const [categoryStatsRes, userRes] = await Promise.all([
@@ -82,6 +85,15 @@ exports.handler = async (event) => {
     return http.notFound('User profile not found');
   }
 
+  // Day boundary is the user's own calendar day, not UTC's - this is what
+  // "resets at midnight" has to mean once users aren't all in one timezone.
+  const serverDate = todayString(user.timezone);
+  // FOCUS allows multiple sessions per day; each session gets its own log row
+  // keyed by idempotencyKey. Other categories are once-per-day, keyed by date+category.
+  const dailyLogSK = categoryId === 'FOCUS'
+    ? `LOG#${serverDate}#${categoryId}#${idempotencyKey}`
+    : `LOG#${serverDate}#${categoryId}`;
+
   // Reset the per-category daily cap counter if it's a new day.
   const categoryXPAlreadyToday = categoryStats.lastXPDate === serverDate ? categoryStats.categoryXPToday : 0;
   const totalXPAlreadyToday = user.totalXPTodayDate === serverDate ? user.totalXPToday : 0;
@@ -110,6 +122,7 @@ exports.handler = async (event) => {
     streakDaysAfterThisCompletion: newStreak,
     categoryXPAlreadyToday,
     totalXPAlreadyToday,
+    durationSeconds: durationSeconds ?? undefined,
   });
 
   const newTotalXP = user.totalXP + xp.finalXPAwarded;

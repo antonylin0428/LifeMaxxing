@@ -23,19 +23,23 @@ exports.handler = async (event) => {
   }));
   if (!membership) return http.forbidden('Not a member of this community');
 
-  const date = todayString();
+  // See getCommunityFeed for why this is a UTC-anchored net + precise
+  // postedAt filter rather than a single calendar-day query.
+  const netStart = todayString('UTC', new Date(Date.now() - 2 * 24 * 60 * 60 * 1000));
+  const netEnd = todayString('UTC', new Date(Date.now() + 24 * 60 * 60 * 1000));
 
   const completionsRes = await ddb.send(new QueryCommand({
     TableName: COMMUNITY_FEED_TABLE,
     KeyConditionExpression: 'PK = :pk AND SK BETWEEN :start AND :end',
     ExpressionAttributeValues: {
       ':pk': `COMMUNITY#${communityId}`,
-      ':start': `DATE#${date}#GOAL#${goalId}#USER#`,
-      ':end': `DATE#${date}#GOAL#${goalId}#USER#~`,
+      ':start': `DATE#${netStart}#GOAL#${goalId}#USER#`,
+      ':end': `DATE#${netEnd}#GOAL#${goalId}#USER#~`,
     },
   }));
 
-  const items = completionsRes.Items ?? [];
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  const items = (completionsRes.Items ?? []).filter(i => new Date(i.completedAt).getTime() >= cutoff);
   if (items.length === 0) return http.ok([]);
 
   // BatchGet user profiles

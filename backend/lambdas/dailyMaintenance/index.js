@@ -21,8 +21,8 @@ const { ddb, TableNames } = dynamo;
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
-function daysAgoString(n) {
-  return new Date(Date.now() - n * MS_PER_DAY).toISOString().slice(0, 10);
+function daysAgoString(n, timezone) {
+  return todayString(timezone, new Date(Date.now() - n * MS_PER_DAY));
 }
 
 function isoWeekKey(dateString) {
@@ -50,11 +50,11 @@ async function queryAllPages(params) {
 
 async function updateUserStats(user) {
   const sub = user.PK.replace('USER#', '');
-  const today = todayString();
-  const thirtyDaysAgo = daysAgoString(30);
-  const sixtyDaysAgo = daysAgoString(60);
+  const today = todayString(user.timezone);
+  const thirtyDaysAgo = daysAgoString(30, user.timezone);
+  const sixtyDaysAgo = daysAgoString(60, user.timezone);
   // 26 weeks ≈ 6 months — enough history to count lifetime elite weeks.
-  const twentySixWeeksAgo = daysAgoString(182);
+  const twentySixWeeksAgo = daysAgoString(182, user.timezone);
 
   // 1. Count active days from DailyLogs (SK = LOG#YYYY-MM-DD#categoryId).
   const logs = await queryAllPages({
@@ -146,7 +146,9 @@ exports.handler = async function () {
       FilterExpression: 'SK = :sk',
       ExpressionAttributeValues: { ':sk': 'PROFILE' },
       ExclusiveStartKey: lastKey,
-      ProjectionExpression: 'PK, totalXP',
+      // "timezone" is a DynamoDB reserved word, hence the #tz alias.
+      ProjectionExpression: 'PK, totalXP, #tz',
+      ExpressionAttributeNames: { '#tz': 'timezone' },
     }));
 
     await Promise.allSettled(

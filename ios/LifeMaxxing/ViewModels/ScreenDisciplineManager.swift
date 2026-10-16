@@ -48,7 +48,7 @@ final class ScreenDisciplineManager {
         let saved = UserDefaults.standard.integer(forKey: K.goalMinutes)
         goalMinutes = saved > 0 ? saved : 180
 
-        let today = todayUTC()
+        let today = Date().localDayString
         let savedDate = UserDefaults.standard.string(forKey: K.date) ?? ""
         if savedDate == today {
             isSubmittedToday = UserDefaults.standard.bool(forKey: K.submitted)
@@ -61,15 +61,8 @@ final class ScreenDisciplineManager {
     }
 
     private func save() {
-        UserDefaults.standard.set(todayUTC(), forKey: K.date)
+        UserDefaults.standard.set(Date().localDayString, forKey: K.date)
         UserDefaults.standard.set(todayMinutes ?? -1, forKey: K.todayMinutes)
         UserDefaults.standard.set(isSubmittedToday, forKey: K.submitted)
-    }
-
-    private func todayUTC() -> String {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        f.timeZone = TimeZone(identifier: "UTC")!
-        return f.string(from: Date())
     }
 }
