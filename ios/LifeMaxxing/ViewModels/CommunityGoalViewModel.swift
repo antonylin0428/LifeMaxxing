@@ -30,7 +30,9 @@ final class CommunityGoalViewModel {
         }
     }
 
-    func submit(text: String?, imageData: Data?) async {
+    var lastResult: CompleteCommunityGoalResponse?
+
+    func submit(text: String?, imageData: Data?, numericValue: Double? = nil) async {
         isSubmitting = true
         submitError = nil
         submitSuccess = false
@@ -44,9 +46,9 @@ final class CommunityGoalViewModel {
                 try await CommunitiesAPI.shared.uploadCommunityPhoto(compressed, to: urlResponse.uploadUrl)
                 s3Key = urlResponse.s3Key
             }
-            try await CommunitiesAPI.shared.completeCommunityGoal(
+            lastResult = try await CommunitiesAPI.shared.completeCommunityGoal(
                 communityId: communityId, goalId: goal.goalId,
-                photoS3Key: s3Key, text: text?.isEmpty == false ? text : nil)
+                photoS3Key: s3Key, text: text?.isEmpty == false ? text : nil, numericValue: numericValue)
             submitSuccess = true
             await loadFeed()
         } catch {

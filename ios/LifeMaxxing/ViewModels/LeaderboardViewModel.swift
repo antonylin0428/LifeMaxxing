@@ -15,6 +15,7 @@ final class LeaderboardViewModel {
         do {
             entries = try await FriendsAPI.shared.leaderboard()
         } catch {
+            if error.isCancellation { return }
             errorMessage = error.localizedDescription
         }
     }

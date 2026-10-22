@@ -27,6 +27,9 @@ struct CreateEditGoalView: View {
                         nameSection
                         descriptionSection
                         trackingTypeSection
+                        if draft.trackingType == .numeric {
+                            numericConfigSection
+                        }
                     }
                     .padding(20)
                 }
@@ -42,11 +45,80 @@ struct CreateEditGoalView: View {
                     Button("Done") { onSave(draft) }
                         .font(Theme.font(16, .regular))
                         .foregroundStyle(Theme.ink)
-                        .disabled(draft.name.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .disabled(!canSave)
                 }
             }
         }
         .presentationDetents([.large])
+    }
+
+    private var canSave: Bool {
+        guard !draft.name.trimmingCharacters(in: .whitespaces).isEmpty else { return false }
+        if draft.trackingType == .numeric {
+            guard let value = Double(draft.targetValue), value > 0 else { return false }
+            guard !draft.unit.trimmingCharacters(in: .whitespaces).isEmpty else { return false }
+        }
+        return true
+    }
+
+    // MARK: - Numeric Config
+
+    private var numericConfigSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            label("Target")
+
+            HStack(spacing: 10) {
+                TextField("150", text: $draft.targetValue)
+                    .keyboardType(.decimalPad)
+                    .font(Theme.font(17))
+                    .padding(14)
+                    .frame(maxWidth: .infinity)
+                    .background(Theme.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+                TextField("g protein", text: $draft.unit)
+                    .font(Theme.font(17))
+                    .padding(14)
+                    .frame(maxWidth: .infinity)
+                    .background(Theme.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .onChange(of: draft.unit) { _, v in if v.count > 20 { draft.unit = String(v.prefix(20)) } }
+            }
+
+            VStack(spacing: 8) {
+                ForEach(CommunityGoal.Direction.allCases, id: \.self) { d in
+                    Button { draft.direction = d } label: {
+                        HStack(spacing: 10) {
+                            Text(d.displayName)
+                                .font(Theme.font(15, .regular))
+                                .foregroundStyle(Theme.textPrimary)
+                            Spacer()
+                            if draft.direction == d {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(Theme.accentGreen)
+                            }
+                        }
+                        .padding(12)
+                        .background(draft.direction == d ? Theme.accentGreen.opacity(0.06) : Theme.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            if let target = Double(draft.targetValue), !draft.unit.isEmpty {
+                Text("Members log a number each day; \(draft.direction == .atMost ? "at most" : "at least") \(formattedTarget(target)) \(draft.unit) earns the day's XP.")
+                    .font(Theme.font(12))
+                    .foregroundStyle(Theme.textSecondary)
+            }
+        }
+        .padding(16)
+        .background(Theme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private func formattedTarget(_ value: Double) -> String {
+        value.truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", value) : String(format: "%g", value)
     }
 
     // MARK: - Emoji
@@ -141,9 +213,7 @@ struct CreateEditGoalView: View {
                 ForEach(CommunityGoal.TrackingType.allCases, id: \.self) { type in
                     Button { draft.trackingType = type } label: {
                         HStack(spacing: 14) {
-                            Image(systemName: type == .photo ? "camera.fill"
-                                  : type == .text ? "text.bubble.fill"
-                                  : "camera.badge.plus")
+                            Image(systemName: trackingTypeIcon(type))
                                 .font(Theme.font(19))
                                 .foregroundStyle(draft.trackingType == type ? Theme.accentGreen : Theme.textSecondary)
                                 .frame(width: 28)
@@ -182,11 +252,21 @@ struct CreateEditGoalView: View {
         }
     }
 
+    private func trackingTypeIcon(_ type: CommunityGoal.TrackingType) -> String {
+        switch type {
+        case .photo: return "camera.fill"
+        case .text: return "text.bubble.fill"
+        case .both: return "camera.badge.plus"
+        case .numeric: return "number"
+        }
+    }
+
     private func trackingTypeSubtitle(_ type: CommunityGoal.TrackingType) -> String {
         switch type {
         case .photo: return "Members submit a photo as proof"
         case .text: return "Members share a short written reflection"
         case .both: return "Members submit both a photo and a message"
+        case .numeric: return "Members log a number against a daily target"
         }
     }
 

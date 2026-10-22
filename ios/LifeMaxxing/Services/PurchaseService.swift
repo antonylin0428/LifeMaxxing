@@ -7,7 +7,12 @@ import Observation
 final class PurchaseService {
     static let shared = PurchaseService()
 
-    private let communityProductId = "com.lifemaxxing.app.community_creation"
+    // Consumable: buying this grants one community-creation credit, and can
+    // be bought repeatedly for additional communities. (The old
+    // "com.lifemaxxing.app.community_creation" product was a non-consumable
+    // one-time unlock and can't be converted - Apple doesn't allow changing
+    // a product's type after creation - so this is a new product ID.)
+    private let communityProductId = "com.lifemaxxing.app.community_creation_credit"
 
     var product: Product?
     var isLoading = false
@@ -66,24 +71,19 @@ final class PurchaseService {
         }
     }
 
-    /// Restores any previously completed purchases. Returns true if access was restored.
+    /// "Restore" doesn't mean what it used to: this product is consumable,
+    /// and Apple deliberately never surfaces consumables via
+    /// Transaction.currentEntitlements (there's no client-side "ownership"
+    /// state to restore - a credit is either spent or it isn't). Our server
+    /// ledger (communityCreateCredits on the Users row) is already the real
+    /// source of truth and already comes back on every GET /me, so "restore"
+    /// here just means "re-sync from the server" - kept as a visible action
+    /// since App Store review sometimes expects one even for consumables.
     func restorePurchases() async throws -> Bool {
         isLoading = true
         defer { isLoading = false }
-
-        var restored = false
-        for await result in Transaction.currentEntitlements {
-            guard result.payloadData != nil else { continue }
-            let jwsString = result.jwsRepresentation
-            if case .verified(let transaction) = result,
-               transaction.productID == communityProductId,
-               transaction.revocationDate == nil {
-                let granted = try await verifyWithBackend(jwsString: jwsString)
-                if granted { restored = true }
-                await transaction.finish()
-            }
-        }
-        return restored
+        let me = try await ProfileAPI.shared.getMe()
+        return me.communityCreateCredits > 0 || me.hasCommunityAccess
     }
 
     private func verifyWithBackend(jwsString: String) async throws -> Bool {
@@ -91,7 +91,7 @@ final class PurchaseService {
             let signedTransactionInfo: String
         }
         struct VerifyResponse: Decodable {
-            let hasCommunityAccess: Bool
+            let communityCreateCredits: Int
         }
         let body = VerifyBody(signedTransactionInfo: jwsString)
         let response: VerifyResponse = try await APIClient.shared.request(
@@ -99,7 +99,7 @@ final class PurchaseService {
             method: .post,
             body: body
         )
-        return response.hasCommunityAccess
+        return response.communityCreateCredits > 0
     }
 }
 

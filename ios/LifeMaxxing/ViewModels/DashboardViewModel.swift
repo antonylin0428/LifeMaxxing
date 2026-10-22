@@ -27,6 +27,7 @@ final class DashboardViewModel {
             user = try await userFetch
             categories = try await categoriesFetch
         } catch {
+            if error.isCancellation { return }
             errorMessage = error.localizedDescription
         }
     }

@@ -1,6 +1,10 @@
 import SwiftUI
 import PhotosUI
 
+fileprivate func formatNumber(_ value: Double) -> String {
+    value.truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", value) : String(format: "%g", value)
+}
+
 struct CommunityGoalFeedView: View {
     let communityId: String
     @State private var viewModel: CommunityGoalViewModel
@@ -53,12 +57,10 @@ struct CommunityGoalFeedView: View {
                     .font(Theme.font(19))
                     .foregroundStyle(Theme.textPrimary)
                 HStack(spacing: 6) {
-                    Image(systemName: viewModel.goal.trackingType == .photo ? "camera.fill"
-                          : viewModel.goal.trackingType == .text ? "text.bubble.fill"
-                          : "camera.badge.plus")
+                    Image(systemName: goalTrackingIcon(viewModel.goal.trackingType))
                         .font(Theme.font(12))
                         .foregroundStyle(Theme.textSecondary)
-                    Text(viewModel.goal.trackingType.displayName)
+                    Text(numericGoalSubtitle(viewModel.goal) ?? viewModel.goal.trackingType.displayName)
                         .font(Theme.font(13))
                         .foregroundStyle(Theme.textSecondary)
                 }
@@ -194,6 +196,19 @@ struct CommunityGoalFeedView: View {
                     Spacer()
                 }
 
+                if let value = post.numericValue {
+                    HStack(spacing: 6) {
+                        Image(systemName: (post.metTarget ?? true) ? "checkmark.circle.fill" : "xmark.circle.fill")
+                            .foregroundStyle((post.metTarget ?? true) ? Theme.accentGreen : Color(hex: "FF4444"))
+                        Text(formatNumber(value))
+                            .font(Theme.font(15, .regular))
+                            .foregroundStyle(Theme.textPrimary)
+                    }
+                    .padding(.horizontal, 12).padding(.vertical, 8)
+                    .background(Theme.surfaceSecondary)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+
                 if let text = post.text, !text.isEmpty {
                     Text(text)
                         .font(Theme.font(15))
@@ -241,6 +256,21 @@ struct CommunityGoalFeedView: View {
         }
     }
 
+    private func goalTrackingIcon(_ type: CommunityGoal.TrackingType) -> String {
+        switch type {
+        case .photo: return "camera.fill"
+        case .text: return "text.bubble.fill"
+        case .both: return "camera.badge.plus"
+        case .numeric: return "number"
+        }
+    }
+
+    private func numericGoalSubtitle(_ goal: CommunityGoal) -> String? {
+        guard goal.trackingType == .numeric, let target = goal.targetValue, let unit = goal.unit else { return nil }
+        let directionText = goal.direction == .atMost ? "At most" : "At least"
+        return "\(directionText) \(formatNumber(target)) \(unit)"
+    }
+
     private func timeAgo(_ iso: String) -> String {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -260,6 +290,7 @@ struct GoalCompletionSheet: View {
     let onDismiss: () -> Void
 
     @State private var text = ""
+    @State private var numericText = ""
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var selectedImageData: Data?
     @State private var selectedImage: UIImage?
@@ -282,6 +313,10 @@ struct GoalCompletionSheet: View {
 
                         if viewModel.goal.trackingType.needsPhoto {
                             photoSection
+                        }
+
+                        if viewModel.goal.trackingType.needsNumber {
+                            numericSection
                         }
 
                         if viewModel.goal.trackingType.needsText {
@@ -351,6 +386,37 @@ struct GoalCompletionSheet: View {
         }
     }
 
+    private var numericSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Today's Number")
+                    .font(Theme.font(14))
+                    .foregroundStyle(Theme.textSecondary)
+                    .textCase(.uppercase)
+                    .tracking(0.6)
+                if let target = viewModel.goal.targetValue, let unit = viewModel.goal.unit {
+                    Spacer()
+                    Text("Goal: \((viewModel.goal.direction == .atMost ? "≤" : "≥")) \(formatNumber(target)) \(unit)")
+                        .font(Theme.font(12))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+            }
+            HStack {
+                TextField("0", text: $numericText)
+                    .keyboardType(.decimalPad)
+                    .font(Theme.font(17))
+                    .padding(14)
+                    .background(Theme.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                if let unit = viewModel.goal.unit {
+                    Text(unit)
+                        .font(Theme.font(15))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+            }
+        }
+    }
+
     private var textSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
@@ -394,11 +460,16 @@ struct GoalCompletionSheet: View {
             if viewModel.goal.trackingType.needsPhoto && selectedImageData == nil
                 && viewModel.goal.myCompletion?.hasPhoto != true { return false }
             if viewModel.goal.trackingType.needsText && text.trimmingCharacters(in: .whitespaces).isEmpty { return false }
+            if viewModel.goal.trackingType.needsNumber && Double(numericText) == nil { return false }
             return true
         }()
 
         return Button {
-            Task { await viewModel.submit(text: text.isEmpty ? nil : text, imageData: selectedImageData) }
+            Task {
+                await viewModel.submit(
+                    text: text.isEmpty ? nil : text, imageData: selectedImageData,
+                    numericValue: Double(numericText))
+            }
         } label: {
             Group {
                 if viewModel.isSubmitting {

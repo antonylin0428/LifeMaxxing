@@ -17,6 +17,11 @@ final class CommunityViewModel {
     var isMember = false
     var isCreator = false
 
+    // Invite sheet state
+    var friends: [Friendship] = []
+    var invitedFriendSubs: Set<String> = []
+    var inviteError: String?
+
     var myPost: CommunityFeedPost? { feedPosts.first { $0.isMe } }
 
     private let communityId: String
@@ -77,21 +82,81 @@ final class CommunityViewModel {
             uploadError = error.localizedDescription
         }
     }
+
+    func loadFriendsForInvite() async {
+        friends = (try? await FriendsAPI.shared.listFriends()) ?? []
+    }
+
+    func inviteFriend(_ friendSub: String) async {
+        inviteError = nil
+        do {
+            try await CommunitiesAPI.shared.inviteFriend(friendSub, toCommunity: communityId)
+            invitedFriendSubs.insert(friendSub)
+        } catch {
+            inviteError = error.localizedDescription
+        }
+    }
 }
 
 @Observable
 @MainActor
 final class MyCommunityListViewModel {
     var communities: [Community] = []
+    var invites: [CommunityInvite] = []
     var isLoading = false
     var errorMessage: String?
+
+    var joinByCodeText = ""
+    var isJoiningByCode = false
+    var joinByCodeError: String?
 
     func load() async {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
         do {
-            communities = try await CommunitiesAPI.shared.listMyCommunities()
+            async let communitiesTask = CommunitiesAPI.shared.listMyCommunities()
+            async let invitesTask = CommunitiesAPI.shared.listCommunityInvites()
+            communities = try await communitiesTask
+            invites = try await invitesTask
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func joinByCode() async -> Community? {
+        let code = joinByCodeText.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        guard !code.isEmpty else { return nil }
+        isJoiningByCode = true
+        joinByCodeError = nil
+        defer { isJoiningByCode = false }
+        do {
+            let result = try await CommunitiesAPI.shared.joinCommunity(byCode: code)
+            joinByCodeText = ""
+            await load()
+            return Community(
+                communityId: result.communityId, name: result.name, description: nil,
+                createdBy: "", createdByUsername: "", createdAt: "", memberCount: nil, inviteCode: nil
+            )
+        } catch {
+            joinByCodeError = error.localizedDescription
+            return nil
+        }
+    }
+
+    func acceptInvite(_ invite: CommunityInvite) async {
+        do {
+            _ = try await CommunitiesAPI.shared.acceptCommunityInvite(invite.communityId)
+            await load()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func declineInvite(_ invite: CommunityInvite) async {
+        do {
+            try await CommunitiesAPI.shared.declineCommunityInvite(invite.communityId)
+            invites.removeAll { $0.id == invite.id }
         } catch {
             errorMessage = error.localizedDescription
         }

@@ -16,11 +16,11 @@ struct CommunityPaywallView: View {
                     // Icon
                     ZStack {
                         Circle()
-                            .fill(Color(hex: "C5B5F5").opacity(0.4))
+                            .fill(Theme.accent.opacity(0.18))
                             .frame(width: 100, height: 100)
                         Image(systemName: "person.3.fill")
                             .font(Theme.font(41))
-                            .foregroundStyle(Color(hex: "7A5CF5"))
+                            .foregroundStyle(Theme.accent)
                     }
                     .padding(.top, 12)
 
@@ -29,7 +29,7 @@ struct CommunityPaywallView: View {
                         Text("Create a Community")
                             .font(Theme.font(27))
                             .foregroundStyle(Theme.textPrimary)
-                        Text("One-time purchase. Create your own community and challenge others to compete alongside you. Joining communities is always free.")
+                        Text("Each purchase grants one community-creation credit. Buy another anytime to create more. Joining communities is always free.")
                             .font(Theme.font(16))
                             .foregroundStyle(Theme.textSecondary)
                             .multilineTextAlignment(.center)
@@ -37,7 +37,7 @@ struct CommunityPaywallView: View {
 
                     // Feature list
                     VStack(alignment: .leading, spacing: 12) {
-                        featureRow(icon: "person.3.fill",    text: "Create unlimited communities")
+                        featureRow(icon: "person.3.fill",    text: "Create 1 community per credit")
                         featureRow(icon: "chart.bar.fill",   text: "Community leaderboards")
                         featureRow(icon: "pencil.circle.fill", text: "Customize name & description anytime")
                         featureRow(icon: "link",              text: "Share invite links with friends")
@@ -57,22 +57,12 @@ struct CommunityPaywallView: View {
                                     Circle().fill(Color.white.opacity(0.8)).frame(width: 6, height: 6)
                                 }
                             }
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 52)
-                            .background(Color(hex: "7A5CF5"))
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         } else {
                             Text(priceLabel)
-                                .font(Theme.font(17, .regular))
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 52)
-                                .background(Color(hex: "7A5CF5"))
-                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
                     }
+                    .buttonStyle(PrimaryButtonStyle())
                     .disabled(service.isLoading)
-                    .padding(.horizontal, 8)
 
                     // Restore
                     Button("Restore Purchases") {
@@ -132,7 +122,7 @@ struct CommunityPaywallView: View {
             if restored {
                 navigateToCreate = true
             } else {
-                errorMessage = "No previous purchase found for this Apple ID."
+                errorMessage = "No community-creation credit found on this account."
                 showError = true
             }
         } catch {
@@ -145,11 +135,11 @@ struct CommunityPaywallView: View {
         HStack(spacing: 14) {
             ZStack {
                 Circle()
-                    .fill(Color(hex: "C5B5F5").opacity(0.4))
+                    .fill(Theme.surfaceSecondary)
                     .frame(width: 32, height: 32)
                 Image(systemName: icon)
                     .font(Theme.font(14, .regular))
-                    .foregroundStyle(Color(hex: "7A5CF5"))
+                    .foregroundStyle(Theme.textPrimary)
             }
             Text(text)
                 .font(Theme.font(15, .regular))

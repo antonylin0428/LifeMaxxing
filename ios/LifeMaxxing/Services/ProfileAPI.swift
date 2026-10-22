@@ -69,9 +69,15 @@ struct ProfileAPI {
     }
 
     #if DEBUG
-    func setMockCommunityAccess(_ hasCommunityAccess: Bool) async throws {
+    /// TESTING-ONLY: grants one mock community-creation credit with no
+    /// payment behind it, via the dev-only /me/premium backdoor. See the
+    /// warning in backend/lambdas/setMockPremium/index.js.
+    @discardableResult
+    func setMockCommunityAccess(_ hasCommunityAccess: Bool) async throws -> Int {
+        struct Response: Decodable { let hasCommunityAccess: Bool; let communityCreateCredits: Int }
         let body = SetMockCommunityAccessRequest(hasCommunityAccess: hasCommunityAccess)
-        let _: EmptyResponse = try await APIClient.shared.request(path: "/me/premium", method: .put, body: body)
+        let response: Response = try await APIClient.shared.request(path: "/me/premium", method: .put, body: body)
+        return response.communityCreateCredits
     }
     #endif
 }

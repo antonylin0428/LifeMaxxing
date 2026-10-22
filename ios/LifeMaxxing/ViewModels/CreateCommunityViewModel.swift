@@ -8,11 +8,13 @@ final class CreateCommunityViewModel {
     var description = ""
     var createdCommunity: Community?
     var errorMessage: String?
+    var needsPurchase = false
     var isLoading = false
 
     func createCommunity() async {
         isLoading = true
         errorMessage = nil
+        needsPurchase = false
         defer { isLoading = false }
         do {
             createdCommunity = try await CommunitiesAPI.shared.createCommunity(
@@ -20,7 +22,8 @@ final class CreateCommunityViewModel {
                 description: description.isEmpty ? nil : description
             )
         } catch APIError.server(403, _) {
-            errorMessage = "Creating communities requires purchasing community access."
+            errorMessage = "You don't have a community-creation credit available."
+            needsPurchase = true
         } catch {
             errorMessage = error.localizedDescription
         }

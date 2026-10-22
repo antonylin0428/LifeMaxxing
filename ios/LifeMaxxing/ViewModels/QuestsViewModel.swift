@@ -5,6 +5,7 @@ import Observation
 @MainActor
 final class QuestsViewModel {
     var categories: [CategoryStat] = []
+    var communities: [Community] = []
     var lastReward: CompleteTaskResult?
     var errorMessage: String?
     var isLoading = false
@@ -14,7 +15,13 @@ final class QuestsViewModel {
         errorMessage = nil
         defer { isLoading = false }
         do {
-            let serverStats = try await ProfileAPI.shared.getCategories()
+            async let categoriesTask = ProfileAPI.shared.getCategories()
+            async let communitiesTask = CommunitiesAPI.shared.listMyCommunities()
+            let serverStats = try await categoriesTask
+            // Communities isn't load-bearing for the quest list itself, so a
+            // failure here (e.g. offline) shouldn't block the rest of the tab.
+            communities = (try? await communitiesTask) ?? []
+
             let serverMap = Dictionary(uniqueKeysWithValues: serverStats.map { ($0.categoryId, $0) })
             // Show every category regardless of whether the server has a stats row yet.
             // Categories explicitly disabled (enabled == false) are hidden.
@@ -34,6 +41,7 @@ final class QuestsViewModel {
                 )
             }
         } catch {
+            if error.isCancellation { return }
             errorMessage = error.localizedDescription
         }
     }

@@ -33,7 +33,6 @@ struct ProfileView: View {
             }
             .refreshable { await viewModel.load() }
         }
-        .navigationTitle("Profile")
         .task { await viewModel.load() }
         .sheet(item: $selectedAchievement) { a in
             AchievementDetailSheet(achievement: a)
@@ -195,15 +194,28 @@ struct ProfileView: View {
                 Divider()
                     .padding(.horizontal, 16)
 
+                // Joining is always free - only creating a new community
+                // checks credits, and only once you actually tap Create
+                // (see CreateCommunityView/CreateCommunityViewModel).
                 NavigationLink {
-                    if user.hasCommunityAccess {
-                        MyCommunityListView()
-                    } else {
-                        CommunityPaywallView()
-                    }
+                    MyCommunityListView()
                 } label: {
                     SettingsRow(icon: "person.3.fill", label: "Communities")
                 }
+
+                #if DEBUG
+                Divider()
+                    .padding(.horizontal, 16)
+
+                Button {
+                    Task { await viewModel.setMockCommunityAccess(true) }
+                } label: {
+                    SettingsRow(
+                        icon: "wand.and.stars",
+                        label: "DEBUG: Grant Community Credit (\(user.communityCreateCredits) now)"
+                    )
+                }
+                #endif
             }
             .background(Theme.surface)
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))

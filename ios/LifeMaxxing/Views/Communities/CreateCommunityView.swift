@@ -49,12 +49,24 @@ struct CreateCommunityView: View {
                     ErrorBanner(message: error)
                 }
 
-                Button("Create Community") {
-                    Task { await viewModel.createCommunity() }
+                if viewModel.needsPurchase {
+                    NavigationLink(destination: CommunityPaywallView()) {
+                        Text("Buy a Community-Creation Credit")
+                            .font(Theme.font(16, .regular))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .background(Theme.ink)
+                            .clipShape(Capsule())
+                    }
+                } else {
+                    Button("Create Community") {
+                        Task { await viewModel.createCommunity() }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(viewModel.isLoading ||
+                              viewModel.name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
-                .buttonStyle(PrimaryButtonStyle())
-                .disabled(viewModel.isLoading ||
-                          viewModel.name.trimmingCharacters(in: .whitespaces).isEmpty)
             }
             .padding(24)
         }
@@ -67,11 +79,11 @@ struct CreateCommunityView: View {
         VStack(spacing: 20) {
             ZStack {
                 Circle()
-                    .fill(Color(hex: "B0E8AC").opacity(0.4))
+                    .fill(Theme.accent.opacity(0.18))
                     .frame(width: 80, height: 80)
                 Image(systemName: "checkmark.circle.fill")
                     .font(Theme.font(41, .regular))
-                    .foregroundStyle(Color(hex: "2A8A28"))
+                    .foregroundStyle(Theme.accent)
             }
             VStack(spacing: 8) {
                 Text("Community Created!")
@@ -90,7 +102,7 @@ struct CreateCommunityView: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 28)
                     .padding(.vertical, 12)
-                    .background(Color(hex: "7A5CF5"))
+                    .background(Theme.ink)
                     .clipShape(Capsule())
             }
         }

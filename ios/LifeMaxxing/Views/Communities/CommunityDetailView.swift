@@ -7,6 +7,7 @@ struct CommunityDetailView: View {
 
     @State private var viewModel: CommunityViewModel
     @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var showInviteSheet = false
 
     init(communityId: String, initialName: String? = nil) {
         self.communityId = communityId
@@ -26,6 +27,14 @@ struct CommunityDetailView: View {
         .navigationTitle(viewModel.community?.name ?? initialName ?? "Community")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            if viewModel.isMember {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showInviteSheet = true } label: {
+                        Image(systemName: "person.badge.plus")
+                            .font(Theme.font(17, .regular))
+                    }
+                }
+            }
             if viewModel.isCreator {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink(destination: CommunitySettingsView(communityId: communityId)) {
@@ -48,6 +57,15 @@ struct CommunityDetailView: View {
             Button("OK") { viewModel.errorMessage = nil }
         } message: {
             Text(viewModel.errorMessage ?? "")
+        }
+        .sheet(isPresented: $showInviteSheet) {
+            if let community = viewModel.community {
+                InviteToCommunitySheet(
+                    community: community,
+                    isCreator: viewModel.isCreator,
+                    viewModel: viewModel
+                ) { showInviteSheet = false }
+            }
         }
     }
 
@@ -140,7 +158,8 @@ struct CommunityDetailView: View {
                 }
                 HStack(spacing: 4) {
                     Image(systemName: goal.trackingType == .photo ? "camera.fill"
-                          : goal.trackingType == .text ? "text.bubble.fill" : "camera.badge.plus")
+                          : goal.trackingType == .text ? "text.bubble.fill"
+                          : goal.trackingType == .numeric ? "number" : "camera.badge.plus")
                         .font(Theme.font(11))
                         .foregroundStyle(Theme.textSecondary)
                     Text(goal.trackingType.displayName)
@@ -184,24 +203,17 @@ struct CommunityDetailView: View {
         Button {
             Task { await viewModel.join() }
         } label: {
-            Group {
-                if viewModel.isJoining {
-                    HStack(spacing: 5) {
-                        ForEach(0..<3, id: \.self) { _ in
-                            Circle().fill(Color.white.opacity(0.8)).frame(width: 6, height: 6)
-                        }
+            if viewModel.isJoining {
+                HStack(spacing: 5) {
+                    ForEach(0..<3, id: \.self) { _ in
+                        Circle().fill(Color.white.opacity(0.8)).frame(width: 6, height: 6)
                     }
-                } else {
-                    Text("Join Community")
-                        .font(Theme.font(17, .regular))
-                        .foregroundStyle(.white)
                 }
+            } else {
+                Text("Join Community")
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: 52)
-            .background(Theme.accentGreen)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
+        .buttonStyle(PrimaryButtonStyle())
         .disabled(viewModel.isJoining)
     }
 
@@ -212,11 +224,11 @@ struct CommunityDetailView: View {
             HStack {
                 ZStack {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(Color(hex: "C5B5F5").opacity(0.3))
+                        .fill(Theme.accent.opacity(0.18))
                         .frame(width: 52, height: 52)
                     Image(systemName: "person.3.fill")
                         .font(Theme.font(23, .regular))
-                        .foregroundStyle(Color(hex: "7A5CF5"))
+                        .foregroundStyle(Theme.accent)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(community.name)
@@ -274,7 +286,7 @@ struct CommunityDetailView: View {
         let rowContent = HStack(spacing: 14) {
             Text("\(rank)")
                 .font(Theme.font(15))
-                .foregroundStyle(rank <= 3 ? Color(hex: "F5A623") : Theme.textSecondary)
+                .foregroundStyle(rank <= 3 ? Color(hex: "FFD700") : Theme.textSecondary)
                 .frame(width: 24, alignment: .center)
 
             VStack(alignment: .leading, spacing: 2) {

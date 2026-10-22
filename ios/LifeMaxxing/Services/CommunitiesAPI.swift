@@ -29,6 +29,40 @@ struct CommunitiesAPI {
         return response.communities
     }
 
+    // MARK: - Invites
+
+    func joinCommunity(byCode code: String) async throws -> JoinCommunityResponse {
+        struct Body: Encodable { let inviteCode: String }
+        return try await APIClient.shared.request(
+            path: "/communities/join-by-code", method: .post, body: Body(inviteCode: code))
+    }
+
+    func inviteFriend(_ friendSub: String, toCommunity communityId: String) async throws {
+        struct Body: Encodable { let friendSub: String }
+        struct Response: Decodable { let status: String }
+        let _: Response = try await APIClient.shared.request(
+            path: "/communities/\(communityId)/invite", method: .post, body: Body(friendSub: friendSub))
+    }
+
+    func listCommunityInvites() async throws -> [CommunityInvite] {
+        let response: CommunityInvitesResponse = try await APIClient.shared.request(
+            path: "/me/community-invites", method: .get)
+        return response.invites
+    }
+
+    func acceptCommunityInvite(_ communityId: String) async throws -> JoinCommunityResponse {
+        struct Response: Decodable { let communityId: String; let name: String; let status: String }
+        let r: Response = try await APIClient.shared.request(
+            path: "/communities/\(communityId)/invite/accept", method: .post)
+        return JoinCommunityResponse(joined: true, communityId: r.communityId, name: r.name)
+    }
+
+    func declineCommunityInvite(_ communityId: String) async throws {
+        struct Response: Decodable { let status: String }
+        let _: Response = try await APIClient.shared.request(
+            path: "/communities/\(communityId)/invite/decline", method: .post)
+    }
+
     func getCommunityLeaderboard(id: String) async throws -> CommunityLeaderboardResponse {
         return try await APIClient.shared.request(
             path: "/communities/\(id)/leaderboard", method: .get)
@@ -63,7 +97,10 @@ struct CommunitiesAPI {
             UpdateCommunityGoalsRequest.Goal(
                 goalId: g.id, name: g.name,
                 description: g.description.isEmpty ? nil : g.description,
-                emoji: g.emoji, trackingType: g.trackingType.rawValue, order: idx)
+                emoji: g.emoji, trackingType: g.trackingType.rawValue, order: idx,
+                targetValue: g.trackingType == .numeric ? Double(g.targetValue) : nil,
+                unit: g.trackingType == .numeric ? g.unit : nil,
+                direction: g.trackingType == .numeric ? g.direction.rawValue : nil)
         })
         struct Response: Decodable { let goals: [CommunityGoal] }
         let response: Response = try await APIClient.shared.request(
@@ -76,12 +113,15 @@ struct CommunitiesAPI {
             path: "/communities/\(communityId)/goals/\(goalId)/upload-url", method: .get)
     }
 
-    func completeCommunityGoal(communityId: String, goalId: String, photoS3Key: String?, text: String?) async throws {
-        struct Body: Encodable { let photoS3Key: String?; let text: String? }
-        struct Response: Decodable { let completed: Bool }
-        let _: Response = try await APIClient.shared.request(
+    @discardableResult
+    func completeCommunityGoal(
+        communityId: String, goalId: String,
+        photoS3Key: String? = nil, text: String? = nil, numericValue: Double? = nil
+    ) async throws -> CompleteCommunityGoalResponse {
+        struct Body: Encodable { let photoS3Key: String?; let text: String?; let numericValue: Double? }
+        return try await APIClient.shared.request(
             path: "/communities/\(communityId)/goals/\(goalId)/complete",
-            method: .post, body: Body(photoS3Key: photoS3Key, text: text))
+            method: .post, body: Body(photoS3Key: photoS3Key, text: text, numericValue: numericValue))
     }
 
     func getCommunityGoalFeed(communityId: String, goalId: String) async throws -> [CommunityGoalCompletion] {

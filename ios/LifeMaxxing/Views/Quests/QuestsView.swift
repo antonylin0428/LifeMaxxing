@@ -24,6 +24,8 @@ struct QuestsView: View {
                     QuestsSkeletonView()
                 } else {
                     VStack(spacing: 24) {
+                        communitiesSection
+
                         questSection(
                             title: "Personal & Community",
                             subtitle: "XP from these counts toward community leaderboards",
@@ -48,7 +50,6 @@ struct QuestsView: View {
             }
             .refreshable { await viewModel.load() }
         }
-        .navigationTitle("Today")
         .task {
             await viewModel.load()
             appState.completedTodayIds.formUnion(viewModel.categories.filter { viewModel.isCompletedToday($0) }.map(\.categoryId))
@@ -66,6 +67,87 @@ struct QuestsView: View {
                 ErrorBanner(message: error)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 8)
+            }
+        }
+    }
+
+    // MARK: - Communities
+
+    @ViewBuilder
+    private var communitiesSection: some View {
+        if viewModel.communities.isEmpty {
+            NavigationLink(destination: MyCommunityListView()) {
+                HStack(spacing: 14) {
+                    ZStack {
+                        Circle()
+                            .fill(Theme.accent.opacity(0.18))
+                            .frame(width: 44, height: 44)
+                        Image(systemName: "person.3.fill")
+                            .font(Theme.font(19, .regular))
+                            .foregroundStyle(Theme.accent)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Join or create your first community")
+                            .font(Theme.font(15, .regular))
+                            .foregroundStyle(Theme.textPrimary)
+                        Text("Compete with friends on shared goals")
+                            .font(Theme.font(12))
+                            .foregroundStyle(Theme.textSecondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(Theme.font(13, .regular))
+                        .foregroundStyle(Theme.textSecondary.opacity(0.5))
+                }
+                .padding(14)
+                .background(Theme.surface)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
+            }
+            .buttonStyle(.plain)
+        } else {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    Image(systemName: "person.3.fill")
+                        .font(Theme.font(13))
+                        .foregroundStyle(Theme.accent)
+                    Text("My Communities")
+                        .font(Theme.font(14))
+                        .foregroundStyle(Theme.textPrimary)
+                    Spacer()
+                    NavigationLink("See All", destination: MyCommunityListView())
+                        .font(Theme.font(12, .regular))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(viewModel.communities) { community in
+                            NavigationLink(destination: CommunityDetailView(
+                                communityId: community.communityId, initialName: community.name
+                            )) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Image(systemName: "person.3.fill")
+                                        .font(Theme.font(17))
+                                        .foregroundStyle(Theme.accent)
+                                    Text(community.name)
+                                        .font(Theme.font(14, .regular))
+                                        .foregroundStyle(Theme.textPrimary)
+                                        .lineLimit(1)
+                                    Text("\(community.memberCount ?? 0) members")
+                                        .font(Theme.font(11))
+                                        .foregroundStyle(Theme.textSecondary)
+                                }
+                                .padding(14)
+                                .frame(width: 150, alignment: .leading)
+                                .background(Theme.surface)
+                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
             }
         }
     }

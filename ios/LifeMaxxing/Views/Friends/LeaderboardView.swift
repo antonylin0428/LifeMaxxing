@@ -38,7 +38,6 @@ struct LeaderboardView: View {
                 await loadFeed()
             }
         }
-        .navigationTitle("Leaderboard")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink { FriendsListView() } label: {
