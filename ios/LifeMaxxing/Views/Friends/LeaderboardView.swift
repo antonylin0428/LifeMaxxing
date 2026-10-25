@@ -1,5 +1,11 @@
 import SwiftUI
 
+/// Navigation markers - see CommunityGoalNavigationTarget's doc comment
+/// (Models/CommunityGoal.swift) for why these exist instead of pushing via
+/// NavigationLink(destination:).
+struct ShowFriendsList: Hashable {}
+struct ShowAddFriend: Hashable {}
+
 struct LeaderboardView: View {
     @State private var viewModel = LeaderboardViewModel()
     @State private var feedPosts: [FeedPost] = []
@@ -40,7 +46,7 @@ struct LeaderboardView: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink { FriendsListView() } label: {
+                NavigationLink(value: ShowFriendsList()) {
                     Image(systemName: "person.2.fill")
                         .font(Theme.font(17, .regular))
                 }
@@ -49,6 +55,15 @@ struct LeaderboardView: View {
         .task {
             await viewModel.load()
             await loadFeed()
+        }
+        .navigationDestination(for: ShowFriendsList.self) { _ in
+            FriendsListView()
+        }
+        .navigationDestination(for: ShowAddFriend.self) { _ in
+            AddFriendView()
+        }
+        .navigationDestination(for: UserProfileNavigationTarget.self) { target in
+            UserProfileView(sub: target.sub, initialUsername: target.initialUsername)
         }
         .safeAreaInset(edge: .bottom) {
             if let error = viewModel.errorMessage {
@@ -252,7 +267,7 @@ struct LeaderboardView: View {
             return AnyView(rowContent)
         } else {
             return AnyView(
-                NavigationLink(destination: UserProfileView(sub: entry.sub, initialUsername: entry.username)) {
+                NavigationLink(value: UserProfileNavigationTarget(sub: entry.sub, initialUsername: entry.username)) {
                     rowContent
                 }
                 .buttonStyle(.plain)

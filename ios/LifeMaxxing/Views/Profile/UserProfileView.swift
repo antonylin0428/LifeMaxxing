@@ -1,5 +1,13 @@
 import SwiftUI
 
+/// Navigation value for pushing a user's profile - see CommunityGoalNavigationTarget's
+/// doc comment (Models/CommunityGoal.swift) for why this exists instead of pushing via
+/// NavigationLink(destination:).
+struct UserProfileNavigationTarget: Hashable {
+    let sub: String
+    let initialUsername: String?
+}
+
 struct UserProfileView: View {
     let sub: String
     let initialUsername: String?

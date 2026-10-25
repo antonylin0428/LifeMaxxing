@@ -97,7 +97,7 @@ struct CommunitiesAPI {
             UpdateCommunityGoalsRequest.Goal(
                 goalId: g.id, name: g.name,
                 description: g.description.isEmpty ? nil : g.description,
-                emoji: g.emoji, trackingType: g.trackingType.rawValue, order: idx,
+                icon: g.icon, trackingType: g.trackingType.rawValue, order: idx,
                 targetValue: g.trackingType == .numeric ? Double(g.targetValue) : nil,
                 unit: g.trackingType == .numeric ? g.unit : nil,
                 direction: g.trackingType == .numeric ? g.direction.rawValue : nil)

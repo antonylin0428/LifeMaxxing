@@ -54,6 +54,21 @@ struct QuestsView: View {
             await viewModel.load()
             appState.completedTodayIds.formUnion(viewModel.categories.filter { viewModel.isCompletedToday($0) }.map(\.categoryId))
         }
+        .navigationDestination(for: Community.self) { community in
+            CommunityDetailView(communityId: community.communityId, initialName: community.name)
+        }
+        .navigationDestination(for: CommunityGoalNavigationTarget.self) { target in
+            CommunityGoalFeedView(communityId: target.communityId, goal: target.goal)
+        }
+        .navigationDestination(for: CommunitySettingsNavigationTarget.self) { target in
+            CommunitySettingsView(communityId: target.communityId)
+        }
+        .navigationDestination(for: UserProfileNavigationTarget.self) { target in
+            UserProfileView(sub: target.sub, initialUsername: target.initialUsername)
+        }
+        .navigationDestination(for: ShowMyCommunityList.self) { _ in
+            MyCommunityListView()
+        }
         .onAppear {
             if !viewModel.categories.isEmpty {
                 Task {
@@ -76,7 +91,7 @@ struct QuestsView: View {
     @ViewBuilder
     private var communitiesSection: some View {
         if viewModel.communities.isEmpty {
-            NavigationLink(destination: MyCommunityListView()) {
+            NavigationLink(value: ShowMyCommunityList()) {
                 HStack(spacing: 14) {
                     ZStack {
                         Circle()
@@ -115,7 +130,7 @@ struct QuestsView: View {
                         .font(Theme.font(14))
                         .foregroundStyle(Theme.textPrimary)
                     Spacer()
-                    NavigationLink("See All", destination: MyCommunityListView())
+                    NavigationLink("See All", value: ShowMyCommunityList())
                         .font(Theme.font(12, .regular))
                         .foregroundStyle(Theme.textSecondary)
                 }
@@ -123,9 +138,14 @@ struct QuestsView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
                         ForEach(viewModel.communities) { community in
-                            NavigationLink(destination: CommunityDetailView(
-                                communityId: community.communityId, initialName: community.name
-                            )) {
+                            // NavigationLink(value:) + .navigationDestination(for:) -
+                            // NavigationLink(destination:) eagerly reconstructs its
+                            // destination (and the destination's own @State) on every
+                            // re-render of this row, which for a stateful destination
+                            // like CommunityDetailView causes a runaway reconstruction
+                            // loop that pegs the CPU and can prevent the view from ever
+                            // finishing its real load.
+                            NavigationLink(value: community) {
                                 VStack(alignment: .leading, spacing: 8) {
                                     Image(systemName: "person.3.fill")
                                         .font(Theme.font(17))

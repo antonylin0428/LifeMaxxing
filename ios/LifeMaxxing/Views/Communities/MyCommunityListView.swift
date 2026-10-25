@@ -1,8 +1,14 @@
 import SwiftUI
 
+/// Navigation markers for parameterless destinations - see
+/// CommunityGoalNavigationTarget's doc comment (Models/CommunityGoal.swift) for why
+/// these exist instead of pushing via NavigationLink(destination:).
+struct ShowMyCommunityList: Hashable {}
+struct ShowCreateCommunity: Hashable {}
+struct ShowCommunityPaywall: Hashable {}
+
 struct MyCommunityListView: View {
     @State private var viewModel = MyCommunityListViewModel()
-    @State private var navigateToCreate = false
     @State private var joinedCommunity: Community?
 
     var body: some View {
@@ -21,7 +27,7 @@ struct MyCommunityListView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink(destination: CreateCommunityView()) {
+                NavigationLink(value: ShowCreateCommunity()) {
                     Image(systemName: "plus")
                         .font(Theme.font(17, .regular))
                         .foregroundStyle(Theme.textPrimary)
@@ -32,6 +38,24 @@ struct MyCommunityListView: View {
         .refreshable { await viewModel.load() }
         .navigationDestination(item: $joinedCommunity) { community in
             CommunityDetailView(communityId: community.communityId, initialName: community.name)
+        }
+        .navigationDestination(for: Community.self) { community in
+            CommunityDetailView(communityId: community.communityId, initialName: community.name)
+        }
+        .navigationDestination(for: CommunityGoalNavigationTarget.self) { target in
+            CommunityGoalFeedView(communityId: target.communityId, goal: target.goal)
+        }
+        .navigationDestination(for: CommunitySettingsNavigationTarget.self) { target in
+            CommunitySettingsView(communityId: target.communityId)
+        }
+        .navigationDestination(for: UserProfileNavigationTarget.self) { target in
+            UserProfileView(sub: target.sub, initialUsername: target.initialUsername)
+        }
+        .navigationDestination(for: ShowCreateCommunity.self) { _ in
+            CreateCommunityView()
+        }
+        .navigationDestination(for: ShowCommunityPaywall.self) { _ in
+            CommunityPaywallView()
         }
     }
 
@@ -47,10 +71,10 @@ struct MyCommunityListView: View {
                 if !viewModel.communities.isEmpty {
                     VStack(spacing: 12) {
                         ForEach(viewModel.communities) { community in
-                            NavigationLink(destination: CommunityDetailView(
-                                communityId: community.communityId,
-                                initialName: community.name
-                            )) {
+                            // NavigationLink(value:) + .navigationDestination(for:) -
+                            // see QuestsView.swift for why NavigationLink(destination:)
+                            // is unsafe for a stateful destination like this one.
+                            NavigationLink(value: community) {
                                 communityCard(community: community)
                             }
                             .buttonStyle(.plain)
@@ -201,7 +225,7 @@ struct MyCommunityListView: View {
                     .foregroundStyle(Theme.textSecondary)
                     .multilineTextAlignment(.center)
             }
-            NavigationLink(destination: CreateCommunityView()) {
+            NavigationLink(value: ShowCreateCommunity()) {
                 Text("Create a Community")
                     .font(Theme.font(16, .regular))
                     .foregroundStyle(.white)

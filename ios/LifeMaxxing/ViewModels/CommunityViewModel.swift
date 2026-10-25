@@ -49,6 +49,11 @@ final class CommunityViewModel {
                 goals = (try? await CommunitiesAPI.shared.getCommunityGoals(id: communityId)) ?? []
                 feedPosts = (try? await CommunitiesAPI.shared.getCommunityFeed(id: communityId)) ?? []
             }
+        } catch is CancellationError {
+            // A newer load() superseded this one (e.g. pull-to-refresh while
+            // the initial .task load was still in flight) - not a real error.
+        } catch let urlError as URLError where urlError.code == .cancelled {
+            // Same as above, surfaced from the underlying URLSession task instead.
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -119,6 +124,10 @@ final class MyCommunityListViewModel {
             async let invitesTask = CommunitiesAPI.shared.listCommunityInvites()
             communities = try await communitiesTask
             invites = try await invitesTask
+        } catch is CancellationError {
+            // A newer load() superseded this one - not a real error.
+        } catch let urlError as URLError where urlError.code == .cancelled {
+            // Same as above, surfaced from the underlying URLSession task instead.
         } catch {
             errorMessage = error.localizedDescription
         }

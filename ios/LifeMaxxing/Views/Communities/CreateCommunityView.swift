@@ -21,6 +21,9 @@ struct CreateCommunityView: View {
         }
         .navigationTitle("Create Community")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(for: Community.self) { community in
+            CommunityDetailView(communityId: community.communityId, initialName: community.name)
+        }
     }
 
     // MARK: Form
@@ -50,7 +53,7 @@ struct CreateCommunityView: View {
                 }
 
                 if viewModel.needsPurchase {
-                    NavigationLink(destination: CommunityPaywallView()) {
+                    NavigationLink(value: ShowCommunityPaywall()) {
                         Text("Buy a Community-Creation Credit")
                             .font(Theme.font(16, .regular))
                             .foregroundStyle(.white)
@@ -93,10 +96,7 @@ struct CreateCommunityView: View {
                     .font(Theme.font(19, .regular))
                     .foregroundStyle(Theme.textSecondary)
             }
-            NavigationLink(destination: CommunityDetailView(
-                communityId: community.communityId,
-                initialName: community.name
-            )) {
+            NavigationLink(value: community) {
                 Text("View Community")
                     .font(Theme.font(16, .regular))
                     .foregroundStyle(.white)

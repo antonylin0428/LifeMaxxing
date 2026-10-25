@@ -1,5 +1,12 @@
 import SwiftUI
 
+/// Navigation value for pushing community settings - see CommunityGoalNavigationTarget's
+/// doc comment (Models/CommunityGoal.swift) for why this exists instead of pushing via
+/// NavigationLink(destination:).
+struct CommunitySettingsNavigationTarget: Hashable {
+    let communityId: String
+}
+
 struct CommunitySettingsView: View {
     let communityId: String
     @State private var viewModel: CommunitySettingsViewModel
@@ -137,11 +144,14 @@ struct CommunitySettingsView: View {
     private func goalRow(goal: CommunityGoalDraft) -> some View {
         Button { editingGoal = goal } label: {
             HStack(spacing: 12) {
-                Text(goal.emoji)
-                    .font(Theme.font(25))
-                    .frame(width: 44, height: 44)
-                    .background(Theme.surfaceSecondary)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                ZStack {
+                    Circle()
+                        .fill(Theme.accent.opacity(0.15))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: goal.icon)
+                        .font(Theme.font(18, .regular))
+                        .foregroundStyle(Theme.accent)
+                }
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(goal.name.isEmpty ? "Unnamed Goal" : goal.name)

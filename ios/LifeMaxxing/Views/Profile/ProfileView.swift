@@ -34,6 +34,9 @@ struct ProfileView: View {
             .refreshable { await viewModel.load() }
         }
         .task { await viewModel.load() }
+        .navigationDestination(for: ShowMyCommunityList.self) { _ in
+            MyCommunityListView()
+        }
         .sheet(item: $selectedAchievement) { a in
             AchievementDetailSheet(achievement: a)
         }
@@ -197,9 +200,7 @@ struct ProfileView: View {
                 // Joining is always free - only creating a new community
                 // checks credits, and only once you actually tap Create
                 // (see CreateCommunityView/CreateCommunityViewModel).
-                NavigationLink {
-                    MyCommunityListView()
-                } label: {
+                NavigationLink(value: ShowMyCommunityList()) {
                     SettingsRow(icon: "person.3.fill", label: "Communities")
                 }
 

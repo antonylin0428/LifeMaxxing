@@ -5,10 +5,11 @@ struct CreateEditGoalView: View {
     let onSave: (CommunityGoalDraft) -> Void
     let onCancel: () -> Void
 
-    @State private var showEmojiInput = false
-
-    private let emojiSuggestions = [
-        "⭐","🙏","💪","📚","🧘","🏃","🌅","✝️","☪️","🕍","☯️","🎯","📝","🥗","💧","😴","🎨","🎵","🌿","❤️"
+    private let iconSuggestions = [
+        "star.fill", "flame.fill", "dumbbell.fill", "figure.run", "figure.strengthtraining.traditional",
+        "drop.fill", "fork.knife", "leaf.fill", "book.fill", "pencil",
+        "moon.fill", "bed.double.fill", "heart.fill", "brain.head.profile", "camera.fill",
+        "target", "checkmark.seal.fill", "bolt.fill", "cup.and.saucer.fill", "figure.mind.and.body",
     ]
 
     init(draft: CommunityGoalDraft, onSave: @escaping (CommunityGoalDraft) -> Void, onCancel: @escaping () -> Void) {
@@ -23,7 +24,7 @@ struct CreateEditGoalView: View {
                 Theme.background.ignoresSafeArea()
                 ScrollView {
                     VStack(spacing: 24) {
-                        emojiSection
+                        iconSection
                         nameSection
                         descriptionSection
                         trackingTypeSection
@@ -121,34 +122,41 @@ struct CreateEditGoalView: View {
         value.truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", value) : String(format: "%g", value)
     }
 
-    // MARK: - Emoji
+    // MARK: - Icon
 
-    private var emojiSection: some View {
+    private var iconSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             label("Icon")
 
             VStack(spacing: 12) {
                 // Large preview
-                Text(draft.emoji)
-                    .font(Theme.font(53))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 80)
-                    .background(Theme.surface)
-                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                ZStack {
+                    Circle()
+                        .fill(Theme.accent.opacity(0.15))
+                        .frame(width: 64, height: 64)
+                    Image(systemName: draft.icon)
+                        .font(Theme.font(27, .regular))
+                        .foregroundStyle(Theme.accent)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 96)
+                .background(Theme.surface)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
 
                 // Quick picks
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 10), spacing: 8) {
-                    ForEach(emojiSuggestions, id: \.self) { emoji in
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 10) {
+                    ForEach(iconSuggestions, id: \.self) { icon in
                         Button {
-                            draft.emoji = emoji
+                            draft.icon = icon
                         } label: {
-                            Text(emoji)
-                                .font(Theme.font(23))
-                                .frame(width: 36, height: 36)
-                                .background(draft.emoji == emoji
-                                            ? Theme.accentGreen.opacity(0.2)
+                            Image(systemName: icon)
+                                .font(Theme.font(17, .regular))
+                                .foregroundStyle(draft.icon == icon ? Theme.accent : Theme.textSecondary)
+                                .frame(width: 40, height: 40)
+                                .background(draft.icon == icon
+                                            ? Theme.accent.opacity(0.15)
                                             : Theme.surfaceSecondary)
-                                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                         }
                         .buttonStyle(.plain)
                     }

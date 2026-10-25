@@ -46,11 +46,14 @@ struct CommunityGoalFeedView: View {
 
     private var goalHeaderCard: some View {
         HStack(spacing: 14) {
-            Text(viewModel.goal.emoji)
-                .font(Theme.font(37))
-                .frame(width: 60, height: 60)
-                .background(Theme.surface)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            ZStack {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Theme.accent.opacity(0.15))
+                    .frame(width: 60, height: 60)
+                Image(systemName: viewModel.goal.icon)
+                    .font(Theme.font(25, .regular))
+                    .foregroundStyle(Theme.accent)
+            }
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(viewModel.goal.name)
@@ -82,7 +85,9 @@ struct CommunityGoalFeedView: View {
     @ViewBuilder
     private var completionActionCard: some View {
         if viewModel.goal.myCompletion == nil {
-            Button { showCompletionSheet = true } label: {
+            Button {
+                showCompletionSheet = true
+            } label: {
                 HStack(spacing: 10) {
                     Image(systemName: "plus.circle.fill")
                         .font(Theme.font(19))
@@ -294,9 +299,28 @@ struct GoalCompletionSheet: View {
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var selectedImageData: Data?
     @State private var selectedImage: UIImage?
+    @State private var showPhotoPicker = false
 
     var body: some View {
-        NavigationStack {
+        // No inner NavigationStack here on purpose - a NavigationStack
+        // nested inside this .sheet, combined with the PhotosPicker further
+        // inside it, is exactly the kind of extra presentation layering
+        // that's a known source of stuck/unresponsive sheets after a system
+        // picker dismisses. A plain header row avoids it entirely.
+        VStack(spacing: 0) {
+            HStack {
+                Button("Cancel") { onDismiss() }
+                    .foregroundStyle(Theme.textSecondary)
+                Spacer()
+                Text(viewModel.goal.myCompletion == nil ? "Complete Goal" : "Update Completion")
+                    .font(Theme.font(16, .semibold))
+                    .foregroundStyle(Theme.textPrimary)
+                Spacer()
+                Color.clear.frame(width: 44)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
+
             ZStack {
                 Theme.background.ignoresSafeArea()
                 ScrollView {
@@ -328,16 +352,7 @@ struct GoalCompletionSheet: View {
                     .padding(20)
                 }
             }
-            .navigationTitle(viewModel.goal.myCompletion == nil ? "Complete Goal" : "Update Completion")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { onDismiss() }
-                        .foregroundStyle(Theme.textSecondary)
-                }
-            }
         }
-        .presentationDetents([.medium, .large])
         .onChange(of: selectedPhotoItem) { _, item in
             Task {
                 if let data = try? await item?.loadTransferable(type: Data.self) {
@@ -356,7 +371,9 @@ struct GoalCompletionSheet: View {
                 .textCase(.uppercase)
                 .tracking(0.6)
 
-            PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+            Button {
+                showPhotoPicker = true
+            } label: {
                 if let image = selectedImage {
                     Image(uiImage: image)
                         .resizable().scaledToFill()
@@ -383,6 +400,11 @@ struct GoalCompletionSheet: View {
                 }
             }
             .buttonStyle(.plain)
+            // The modifier form of the picker (vs. the inline PhotosPicker
+            // button component) - the inline form combined with this sheet's
+            // .presentationDetents is a known source of a stuck dismissal
+            // transition that eats all touch input after selecting a photo.
+            .photosPicker(isPresented: $showPhotoPicker, selection: $selectedPhotoItem, matching: .images)
         }
     }
 

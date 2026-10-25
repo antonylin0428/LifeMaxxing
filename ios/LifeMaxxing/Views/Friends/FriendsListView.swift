@@ -26,7 +26,7 @@ struct FriendsListView: View {
         .navigationTitle("Friends")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink { AddFriendView() } label: {
+                NavigationLink(value: ShowAddFriend()) {
                     Image(systemName: "person.badge.plus")
                         .font(Theme.font(17, .regular))
                 }
@@ -99,7 +99,7 @@ struct FriendsListView: View {
             } else {
                 VStack(spacing: 8) {
                     ForEach(viewModel.friends) { friend in
-                        NavigationLink(destination: UserProfileView(
+                        NavigationLink(value: UserProfileNavigationTarget(
                             sub: friend.friendSub,
                             initialUsername: friend.friendUsername
                         )) {

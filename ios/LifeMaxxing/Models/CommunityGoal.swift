@@ -1,11 +1,25 @@
 import Foundation
 
-struct CommunityGoal: Codable, Identifiable {
+/// Navigation value for pushing a goal screen - bundles the goal with the
+/// community it belongs to. Used instead of pushing CommunityGoal alone so
+/// the destination can be registered at a stable root (QuestsView,
+/// MyCommunityListView) rather than on CommunityDetailView itself: a
+/// navigationDestination(for:) declared on a view that's itself a pushed,
+/// frequently-re-rendering destination gets re-registered on every one of
+/// that view's re-renders, which makes SwiftUI re-resolve the already-
+/// displayed child in a feedback loop that pegs the CPU.
+struct CommunityGoalNavigationTarget: Hashable {
+    let communityId: String
+    let goal: CommunityGoal
+}
+
+struct CommunityGoal: Codable, Identifiable, Hashable {
     var id: String { goalId }
     let goalId: String
     let name: String
     let description: String?
-    let emoji: String
+    /// SF Symbol name (e.g. "drop.fill"), not a unicode emoji.
+    let icon: String
     let trackingType: TrackingType
     let order: Int
     /// Numeric goals only.
@@ -14,7 +28,7 @@ struct CommunityGoal: Codable, Identifiable {
     let direction: Direction?
     let myCompletion: MyCompletion?
 
-    enum TrackingType: String, Codable, CaseIterable {
+    enum TrackingType: String, Codable, CaseIterable, Hashable {
         case photo
         case text
         case both
@@ -34,7 +48,7 @@ struct CommunityGoal: Codable, Identifiable {
         var needsNumber: Bool { self == .numeric }
     }
 
-    enum Direction: String, Codable, CaseIterable {
+    enum Direction: String, Codable, CaseIterable, Hashable {
         case atLeast = "at_least"
         case atMost = "at_most"
 
@@ -46,7 +60,7 @@ struct CommunityGoal: Codable, Identifiable {
         }
     }
 
-    struct MyCompletion: Codable {
+    struct MyCompletion: Codable, Hashable {
         let text: String?
         let hasPhoto: Bool
         let numericValue: Double?
@@ -89,7 +103,7 @@ struct CommunityGoalDraft: Identifiable, Equatable {
     var id: String
     var name: String
     var description: String
-    var emoji: String
+    var icon: String
     var trackingType: CommunityGoal.TrackingType
     var order: Int
     var targetValue: String
@@ -100,7 +114,7 @@ struct CommunityGoalDraft: Identifiable, Equatable {
         id = goal.goalId
         name = goal.name
         description = goal.description ?? ""
-        emoji = goal.emoji
+        icon = goal.icon
         trackingType = goal.trackingType
         order = goal.order
         targetValue = goal.targetValue.map { String(format: $0.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%g", $0) } ?? ""
@@ -112,7 +126,7 @@ struct CommunityGoalDraft: Identifiable, Equatable {
         id = UUID().uuidString
         name = ""
         description = ""
-        emoji = "⭐"
+        icon = "star.fill"
         trackingType = .photo
         order = 0
         targetValue = ""
@@ -126,7 +140,7 @@ struct UpdateCommunityGoalsRequest: Encodable {
         let goalId: String
         let name: String
         let description: String?
-        let emoji: String
+        let icon: String
         let trackingType: String
         let order: Int
         let targetValue: Double?
